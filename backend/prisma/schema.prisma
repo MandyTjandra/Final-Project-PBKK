@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String       @id @default(uuid())
+  email        String       @unique
+  password     String
+  name         String
+  role         String       @default("BREWER") // "BREWER", "ROASTER", "ADMIN"
+  refreshToken String?
+  avatarUrl    String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  beans        CoffeeBean[]
+  recipes      BrewRecipe[]
+  reviews      Review[]
+  favorites    Favorite[]
+}
+
+model CoffeeBean {
+  id                String       @id @default(uuid())
+  roasterId         String
+  roaster           User         @relation(fields: [roasterId], references: [id], onDelete: Cascade)
+  name              String
+  origin            String       // e.g., "Aceh Gayo", "Ethiopia Sidama", "Colombia Huila"
+  farmOrStation     String?      // e.g., "Pantang Musara", "Bombe Washing Station"
+  varietal          String       // e.g., "Typica", "Bourbon", "Geisha", "Castillo"
+  process           String       // "WASHED", "NATURAL", "HONEY", "ANAEROBIC", "EXPERIMENTAL"
+  roastLevel        String       // "LIGHT", "LIGHT_MEDIUM", "MEDIUM", "DARK"
+  altitudeMasl      Int?         // Elevation in meters above sea level
+  stockGrams        Int          @default(0)
+  minStockThreshold Int          @default(500)
+  price             Float        // Price per bag (IDR)
+  bagSizeGrams      Int          @default(250)
+  imageUrl          String?
+  tastingWheelUrl   String?
+  description       String?
+  tastingNotes      String       // Comma separated or string list, e.g. "Jasmine, Bergamot, Earl Grey"
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  recipes           BrewRecipe[]
+}
+
+model BrewRecipe {
+  id                   String       @id @default(uuid())
+  userId               String
+  user                 User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  coffeeBeanId         String?
+  coffeeBean           CoffeeBean?  @relation(fields: [coffeeBeanId], references: [id], onDelete: SetNull)
+  title                String
+  method               String       // "V60", "AEROPRESS", "KALITA_WAVE", "FRENCH_PRESS", "COLD_BREW"
+  grindSize            String       // e.g., "Medium-Fine (18 Clicks)"
+  coffeeDoseGrams      Float        // Dose in grams, e.g. 15.0
+  targetRatio          Float        // e.g., 15.0 for 1:15 ratio
+  totalWaterMl         Float        // e.g., 225.0
+  waterTempCelsius     Int          // e.g., 92
+  totalBrewTimeSeconds Int          // e.g., 180 seconds (3 mins)
+  difficulty           String       @default("BEGINNER") // "BEGINNER", "INTERMEDIATE", "ADVANCED"
+  description          String?
+  isPublic             Boolean      @default(true)
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+
+  pourSteps            PourStep[]
+  reviews              Review[]
+  favorites            Favorite[]
+}
+
+model PourStep {
+  id               String     @id @default(uuid())
+  recipeId         String
+  recipe           BrewRecipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  stepOrder        Int        // 1, 2, 3...
+  startTimeSeconds Int        // Starts at second X (e.g., 0, 45, 90)
+  waterAmountMl    Float      // Water added in this step
+  instruction      String     // e.g., "Bloom 45g water, swirl gently"
+}
+
+model Review {
+  id        String     @id @default(uuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipeId  String
+  recipe    BrewRecipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  rating    Int        // 1 to 5
+  comment   String?
+  createdAt DateTime   @default(now())
+}
+
+model Favorite {
+  id        String     @id @default(uuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipeId  String
+  recipe    BrewRecipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now())
+
+  @@unique([userId, recipeId])
+}
