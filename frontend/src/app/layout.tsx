@@ -1,20 +1,29 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Cormorant_Garamond, JetBrains_Mono, Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+const plusJakarta = Plus_Jakarta_Sans({
+  variable: '--font-sans',
   subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
 });
 
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
+const cormorant = Cormorant_Garamond({
+  variable: '--font-serif',
   subsets: ['latin'],
+  weight: ['500', '600', '700'],
+  style: ['normal', 'italic'],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: '--font-mono',
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
 });
 
 export const metadata: Metadata = {
-  title: 'BrewLab — Single-Origin Coffee & Brew Guide',
-  description: 'Specialty coffee inventory management and manual brew recipe repository.',
+  title: 'BrewLab Atelier — Single-Origin Coffee Hub & Extraction Lab',
+  description: 'Specialty single-origin coffee catalog, roastery inventory telemetry, and precision manual brew dial-in.',
 };
 
 export default function RootLayout({
@@ -26,9 +35,9 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${plusJakarta.variable} ${cormorant.variable} ${jetbrainsMono.variable} h-full antialiased dark`}
     >
-      <body className="min-h-full flex flex-col" suppressHydrationWarning>
+      <body className="min-h-full flex flex-col bg-[#090807] text-stone-100 font-sans selection:bg-amber-500/30 selection:text-amber-200" suppressHydrationWarning>
         {children}
       </body>
     </html>

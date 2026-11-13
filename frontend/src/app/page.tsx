@@ -24,8 +24,11 @@ import {
   Pause,
   RotateCcw,
   ShieldCheck,
-  Award,
   GraduationCap,
+  ArrowUpRight,
+  Sparkles,
+  ChevronLeft,
+  Droplets,
 } from 'lucide-react';
 import { api } from '../lib/api';
 import CoffeeTutorialSection from '../components/CoffeeTutorialSection';
@@ -107,6 +110,7 @@ export default function Home() {
   const [recipes, setRecipes] = useState<BrewRecipe[]>([]);
   const [loading, setLoading] = useState(false);
   const [backendOffline, setBackendOffline] = useState(false);
+  const [spotlightIdx, setSpotlightIdx] = useState(0);
   const [feedbackMsg, setFeedbackMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Search & Filter State
@@ -256,6 +260,15 @@ export default function Home() {
       cancelled = true;
     };
   }, []);
+
+  // Auto-cycle hero spotlight lot every 6 seconds
+  useEffect(() => {
+    if (beans.length <= 1) return;
+    const interval = setInterval(() => {
+      setSpotlightIdx((prev) => prev + 1);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, [beans.length]);
 
   // Load beans & recipes whenever filters or search change
   useEffect(() => {
@@ -462,114 +475,136 @@ export default function Home() {
   const lowStockCount = beans.filter((b) => b.stockGrams <= b.minStockThreshold).length;
   const inventoryValuation = beans.reduce((acc, b) => acc + (b.stockGrams / (b.bagSizeGrams || 250)) * b.price, 0);
 
+  const spotlightBean = beans.length > 0 ? beans[spotlightIdx % beans.length] : null;
+
   return (
-    <div className="min-h-screen bg-[#0c0a09] text-stone-100 flex flex-col font-sans selection:bg-amber-800 selection:text-amber-100">
+    <div className="min-h-screen bg-[#090807] text-stone-100 flex flex-col font-sans selection:bg-amber-700/40 selection:text-amber-100">
       {/* Toast Notification */}
       {feedbackMsg && (
         <div
-          className={`fixed bottom-6 right-6 z-50 px-5 py-3 rounded-xl shadow-2xl border flex items-center gap-3 transition-all transform animate-bounce ${
+          className={`fixed bottom-6 right-6 z-50 px-5 py-3 rounded-xl shadow-2xl border backdrop-blur-md flex items-center gap-3 animate-card-in ${
             feedbackMsg.type === 'success'
-              ? 'bg-emerald-950/90 border-emerald-700 text-emerald-200'
-              : 'bg-rose-950/90 border-rose-700 text-rose-200'
+              ? 'bg-emerald-950/90 border-emerald-700/80 text-emerald-200'
+              : 'bg-rose-950/90 border-rose-700/80 text-rose-200'
           }`}
         >
           {feedbackMsg.type === 'success' ? (
-            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
           ) : (
-            <AlertTriangle className="w-5 h-5 text-rose-400" />
+            <AlertTriangle className="w-4 h-4 text-rose-400" />
           )}
-          <span className="font-semibold text-xs">{feedbackMsg.text}</span>
+          <span className="font-medium text-xs tracking-wide">{feedbackMsg.text}</span>
         </div>
       )}
 
-      {/* Top Bar / Role Switcher Demo Toolbar */}
-      <div className="bg-stone-900/90 border-b border-stone-800/80 px-6 py-2 flex flex-wrap items-center justify-between text-xs text-stone-400 gap-3">
-        <div className="flex items-center gap-2">
-          <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span className="font-medium">NestJS (Modular) + Prisma ORM + PostgreSQL/SQLite</span>
-          <span className="text-stone-700">|</span>
-          <span className="text-amber-400 font-bold">Quick Demo RBAC Switcher:</span>
-        </div>
+      {/* Subtle Atelier Workspace Utility Bar */}
+      <div className="bg-[#0e0c0a] border-b border-stone-800/70">
+        <div className="max-w-[1640px] mx-auto px-4 sm:px-6 lg:px-10 py-2 flex flex-wrap items-center justify-between gap-3 text-[11px] text-stone-400">
+          <div className="flex items-center gap-3">
+            <span className="inline-flex items-center gap-1.5 font-mono uppercase tracking-widest text-[10px] text-stone-300">
+              <span className={`inline-block w-1.5 h-1.5 rounded-full ${backendOffline ? 'bg-amber-500 animate-pulse' : 'bg-emerald-400 animate-pulse'}`}></span>
+              {backendOffline ? 'Offline Preview' : 'Roastery Telemetry Live'}
+            </span>
+            <span className="hidden md:inline text-stone-700">/</span>
+            <span className="hidden md:inline font-mono text-[10px] tracking-wider text-stone-500">
+              LOT RESERVE · {totalStockKg} KG IN VAULT · {beans.length} ORIGINS · {recipes.length} FORMULAS
+            </span>
+          </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => handleQuickLogin('roaster@morningglory.com', 'ROASTER')}
-            className={`px-3 py-1 rounded-lg border text-[11px] font-semibold transition-all ${
-              currentUser?.role === 'ROASTER'
-                ? 'bg-amber-600 text-stone-950 border-amber-500 shadow-md font-bold'
-                : 'bg-stone-800 border-stone-700 hover:bg-stone-700 text-stone-300'
-            }`}
-          >
-            Roaster Account (Manage Stock & Catalog)
-          </button>
-          <button
-            onClick={() => handleQuickLogin('barista.alex@brewlab.com', 'BREWER')}
-            className={`px-3 py-1 rounded-lg border text-[11px] font-semibold transition-all ${
-              currentUser?.role === 'BREWER'
-                ? 'bg-amber-600 text-stone-950 border-amber-500 shadow-md font-bold'
-                : 'bg-stone-800 border-stone-700 hover:bg-stone-700 text-stone-300'
-            }`}
-          >
-            Brewer Account (Recipes & Reviews)
-          </button>
-          <button
-            onClick={() => handleQuickLogin('admin@brewlab.com', 'ADMIN')}
-            className={`px-3 py-1 rounded-lg border text-[11px] font-semibold transition-all ${
-              currentUser?.role === 'ADMIN'
-                ? 'bg-amber-600 text-stone-950 border-amber-500 shadow-md font-bold'
-                : 'bg-stone-800 border-stone-700 hover:bg-stone-700 text-stone-300'
-            }`}
-          >
-            Admin Account
-          </button>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] font-mono uppercase tracking-widest text-stone-500 mr-1 hidden sm:inline">
+              Access Mode
+            </span>
+            <div className="inline-flex items-center bg-stone-950 border border-stone-800/80 rounded-lg p-0.5 gap-0.5">
+              <button
+                onClick={() => handleQuickLogin('roaster@morningglory.com', 'ROASTER')}
+                className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all ${
+                  currentUser?.role === 'ROASTER'
+                    ? 'bg-stone-800 text-amber-300 shadow-sm border border-amber-500/30'
+                    : 'text-stone-400 hover:text-stone-200'
+                }`}
+              >
+                Roaster
+              </button>
+              <button
+                onClick={() => handleQuickLogin('barista.alex@brewlab.com', 'BREWER')}
+                className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all ${
+                  currentUser?.role === 'BREWER'
+                    ? 'bg-stone-800 text-amber-300 shadow-sm border border-amber-500/30'
+                    : 'text-stone-400 hover:text-stone-200'
+                }`}
+              >
+                Brewer
+              </button>
+              <button
+                onClick={() => handleQuickLogin('admin@brewlab.com', 'ADMIN')}
+                className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all ${
+                  currentUser?.role === 'ADMIN'
+                    ? 'bg-amber-600/90 text-stone-950 font-bold shadow-sm'
+                    : 'text-stone-400 hover:text-stone-200'
+                }`}
+              >
+                Admin
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Main Navigation Header */}
-      <header className="bg-stone-900/90 border-b border-stone-800 sticky top-0 z-40 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-6 py-3 flex flex-wrap xl:flex-nowrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3 cursor-pointer shrink-0" onClick={() => setActiveTab('beans')}>
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-600 to-amber-400 flex items-center justify-center shadow-lg shadow-amber-900/30">
-              <Coffee className="w-5 h-5 text-stone-950 stroke-[2.5]" />
+      <header className="bg-[#0d0b09]/85 border-b border-stone-800/70 sticky top-0 z-40 backdrop-blur-xl">
+        <div className="max-w-[1640px] mx-auto px-4 sm:px-6 lg:px-10 py-3.5 flex flex-wrap xl:flex-nowrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5 cursor-pointer shrink-0 group" onClick={() => setActiveTab('beans')}>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#e2a856] via-[#c78535] to-[#8a5318] flex items-center justify-center shadow-lg shadow-amber-950/50 border border-amber-300/20 group-hover:scale-105 transition-transform duration-300">
+              <Coffee className="w-5 h-5 text-stone-950 stroke-[2.2]" />
             </div>
             <div>
-              <div className="font-extrabold text-lg tracking-tight text-white flex items-center gap-2">
-                BrewLab <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">PRO</span>
+              <div className="flex items-baseline gap-2">
+                <span className="font-serif text-2xl font-semibold tracking-tight text-stone-50 leading-none">
+                  BrewLab
+                </span>
+                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-amber-400/90 font-semibold">
+                  Atelier
+                </span>
               </div>
-              <div className="text-[11px] text-stone-400 font-medium hidden sm:block">Single-Origin Coffee Hub & Recipe Dial-in</div>
+              <div className="text-[10px] font-mono uppercase tracking-[0.16em] text-stone-500 hidden sm:block mt-0.5">
+                Origin Archive &amp; Extraction Lab
+              </div>
             </div>
           </div>
 
-          {/* Navigation Tabs (Responsive, no horizontal scrollbar) */}
-          <nav className="order-3 xl:order-2 w-full xl:w-auto flex flex-wrap xl:flex-nowrap items-center justify-center gap-1 bg-stone-950/90 p-1.5 rounded-xl border border-stone-800">
+          {/* Navigation Tabs (Responsive, zero horizontal scrollbar) */}
+          <nav className="order-3 xl:order-2 w-full xl:w-auto flex flex-wrap xl:flex-nowrap items-center justify-center gap-1 bg-stone-950/90 p-1 rounded-xl border border-stone-800/80 shadow-inner">
             <button
               onClick={() => setActiveTab('beans')}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200 ${
                 activeTab === 'beans'
-                  ? 'bg-stone-800 text-amber-400 border border-stone-700 shadow-sm'
-                  : 'text-stone-400 hover:text-stone-200'
+                  ? 'bg-stone-800/95 text-amber-300 border border-stone-700/80 shadow-sm'
+                  : 'text-stone-400 hover:text-stone-100 hover:bg-stone-900/60'
               }`}
             >
               <Coffee className="w-3.5 h-3.5" />
-              Origins Catalog ({beans.length})
+              Origins Catalog
+              <span className="font-mono text-[10px] text-stone-400">({beans.length})</span>
             </button>
             <button
               onClick={() => setActiveTab('recipes')}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200 ${
                 activeTab === 'recipes'
-                  ? 'bg-stone-800 text-amber-400 border border-stone-700 shadow-sm'
-                  : 'text-stone-400 hover:text-stone-200'
+                  ? 'bg-stone-800/95 text-amber-300 border border-stone-700/80 shadow-sm'
+                  : 'text-stone-400 hover:text-stone-100 hover:bg-stone-900/60'
               }`}
             >
               <BookOpen className="w-3.5 h-3.5" />
-              Brew Guides ({recipes.length})
+              Brew Guides
+              <span className="font-mono text-[10px] text-stone-400">({recipes.length})</span>
             </button>
             <button
               onClick={() => setActiveTab('calculator')}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200 ${
                 activeTab === 'calculator'
-                  ? 'bg-stone-800 text-amber-400 border border-stone-700 shadow-sm'
-                  : 'text-stone-400 hover:text-stone-200'
+                  ? 'bg-stone-800/95 text-amber-300 border border-stone-700/80 shadow-sm'
+                  : 'text-stone-400 hover:text-stone-100 hover:bg-stone-900/60'
               }`}
             >
               <Scale className="w-3.5 h-3.5" />
@@ -577,21 +612,21 @@ export default function Home() {
             </button>
             <button
               onClick={() => setActiveTab('tutorial')}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200 ${
                 activeTab === 'tutorial'
-                  ? 'bg-stone-800 text-amber-400 border border-stone-700 shadow-sm'
-                  : 'text-stone-400 hover:text-stone-200'
+                  ? 'bg-stone-800/95 text-amber-300 border border-stone-700/80 shadow-sm'
+                  : 'text-stone-400 hover:text-stone-100 hover:bg-stone-900/60'
               }`}
             >
               <GraduationCap className="w-3.5 h-3.5" />
-              Coffee 101 & Gear
+              Coffee 101 &amp; Gear
             </button>
             <button
               onClick={() => setActiveTab('roastery')}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200 ${
                 activeTab === 'roastery'
-                  ? 'bg-stone-800 text-amber-400 border border-stone-700 shadow-sm'
-                  : 'text-stone-400 hover:text-stone-200'
+                  ? 'bg-stone-800/95 text-amber-300 border border-stone-700/80 shadow-sm'
+                  : 'text-stone-400 hover:text-stone-100 hover:bg-stone-900/60'
               }`}
             >
               <Package className="w-3.5 h-3.5" />
@@ -608,10 +643,10 @@ export default function Home() {
           {/* User Account / Auth Button - Always Pinned Top Right */}
           <div className="order-2 xl:order-3 ml-auto xl:ml-0 flex items-center gap-3 shrink-0">
             {currentUser ? (
-              <div className="flex items-center gap-3 bg-stone-800 pl-3 pr-2 py-1.5 rounded-xl border border-stone-700">
+              <div className="flex items-center gap-3 bg-stone-900/90 pl-3.5 pr-2 py-1.5 rounded-xl border border-stone-800 hover:border-stone-700 transition-colors">
                 <div className="text-right">
-                  <div className="text-xs font-bold text-stone-200">{currentUser.name}</div>
-                  <div className="text-[10px] uppercase font-bold tracking-wider text-amber-400 flex items-center justify-end gap-1">
+                  <div className="text-xs font-semibold text-stone-100">{currentUser.name}</div>
+                  <div className="text-[10px] font-mono uppercase tracking-widest text-amber-400/90 flex items-center justify-end gap-1">
                     <ShieldCheck className="w-3 h-3 text-amber-400" />
                     {currentUser.role}
                   </div>
@@ -622,12 +657,12 @@ export default function Home() {
                   width={32}
                   height={32}
                   unoptimized
-                  className="w-8 h-8 rounded-lg object-cover border border-stone-700"
+                  className="w-8 h-8 rounded-lg object-cover border border-stone-700/80"
                 />
                 <button
                   onClick={handleLogout}
                   title="Sign out"
-                  className="p-1.5 hover:bg-stone-700 text-stone-400 hover:text-rose-400 rounded-lg transition-colors"
+                  className="p-1.5 hover:bg-stone-800 text-stone-400 hover:text-rose-400 rounded-lg transition-colors"
                 >
                   <LogOut className="w-4 h-4" />
                 </button>
@@ -635,7 +670,7 @@ export default function Home() {
             ) : (
               <button
                 onClick={() => setShowAuthModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-500 text-stone-950 font-extrabold text-xs rounded-xl transition-all shadow-md shadow-amber-900/30"
+                className="flex items-center gap-2 px-4 py-2 bg-[#d89946] hover:bg-[#e5aa59] text-stone-950 font-bold text-xs rounded-xl transition-all shadow-md shadow-amber-950/30"
               >
                 <UserIcon className="w-4 h-4" />
                 Sign In
@@ -645,52 +680,229 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="bg-gradient-to-b from-stone-900 via-stone-900 to-[#0c0a09] border-b border-stone-800/80 py-10 px-6">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
-          <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold mb-3">
-              <Award className="w-3.5 h-3.5" />
-              Specialty Coffee Manual Brew Ecosystem
+      {/* Editorial Widescreen Hero Section */}
+      <section className="relative overflow-hidden border-b border-stone-800/70 bg-[#0b0908] bg-atelier-grid">
+        {/* Ambient drifting copper glow */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-32 left-1/4 w-[540px] h-[360px] rounded-full bg-amber-600/10 blur-[120px] animate-aura-drift"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -bottom-32 right-1/5 w-[440px] h-[320px] rounded-full bg-orange-900/15 blur-[110px] animate-aura-drift"
+        />
+
+        <div className="relative max-w-[1640px] mx-auto px-4 sm:px-6 lg:px-10 py-8 lg:py-12 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+          {/* Left Editorial Column */}
+          <div className="lg:col-span-7 space-y-6">
+            <div className="flex items-center gap-3 text-[11px] font-mono uppercase tracking-[0.22em] text-amber-400/90">
+              <span className="inline-block w-8 h-px bg-amber-500/60"></span>
+              <span>CURATED SINGLE-ORIGIN ARCHIVE · ROASTERY LAB</span>
             </div>
-            <h1 className="text-3xl md:text-5xl font-black tracking-tight text-white mb-3 leading-tight">
-              Single-Origin Coffee Hub & <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-amber-200 to-amber-500">
-                Precision Extraction Dial-in.
+
+            <h1 className="text-4xl sm:text-5xl xl:text-6xl font-bold tracking-tight text-stone-50 leading-[1.06]">
+              Single-Origin Craft &amp;{' '}
+              <span className="font-serif italic font-semibold text-transparent bg-clip-text bg-gradient-to-r from-[#f3cfa0] via-[#e2a657] to-[#c77d2f]">
+                Precision Extraction
               </span>
+              .
             </h1>
-            <p className="text-stone-400 text-xs md:text-sm leading-relaxed">
-              Track single-origin beans, compute dynamic water timelines per second, and share community brew recipes for V60, AeroPress, Kalita Wave, French Press, and Cold Brew.
+
+            <p className="text-stone-400 text-sm md:text-base max-w-2xl leading-relaxed">
+              Explore rare botanical varietals from <span className="text-stone-200 font-medium">Panama Gesha</span> to{' '}
+              <span className="text-stone-200 font-medium">Coffea Eugenioides</span>, compute real-time pour curves, and dial in signature café recipes.
             </p>
+
+            {/* Quick Action CTAs + Compact Editorial Telemetry Strip */}
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <button
+                onClick={() => setActiveTab('calculator')}
+                className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#d89946] hover:bg-[#e5aa59] text-stone-950 text-xs font-extrabold tracking-wide transition-all shadow-lg shadow-amber-950/30"
+              >
+                <Droplets className="w-4 h-4 group-hover:animate-bounce" />
+                Open Extraction Lab
+                <ArrowUpRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </button>
+              <button
+                onClick={() => setActiveTab('tutorial')}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-stone-900/90 hover:bg-stone-800 border border-stone-700/80 text-stone-200 text-xs font-semibold transition-all"
+              >
+                <GraduationCap className="w-4 h-4 text-amber-400" />
+                Coffee 101 &amp; Flavor Wheel
+              </button>
+            </div>
+
+            <div className="grid grid-cols-3 gap-6 max-w-lg pt-4 border-t border-stone-800/80">
+              <div>
+                <div className="font-mono text-xl sm:text-2xl font-bold text-stone-50 flex items-baseline gap-1.5">
+                  {beans.length}
+                  {loading && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>}
+                </div>
+                <div className="text-[11px] font-mono uppercase tracking-wider text-stone-500 mt-0.5">Origins Cataloged</div>
+              </div>
+              <div className="border-l border-stone-800/80 pl-5">
+                <div className="font-mono text-xl sm:text-2xl font-bold text-amber-400">{recipes.length}</div>
+                <div className="text-[11px] font-mono uppercase tracking-wider text-stone-500 mt-0.5">Brew Formulas</div>
+              </div>
+              <div className="border-l border-stone-800/80 pl-5">
+                <div className="font-mono text-xl sm:text-2xl font-bold text-emerald-400">{totalStockKg} kg</div>
+                <div className="text-[11px] font-mono uppercase tracking-wider text-stone-500 mt-0.5">Vault Reserve</div>
+              </div>
+            </div>
           </div>
 
-          {/* Quick Stats Widget */}
-          <div className="grid grid-cols-3 gap-3 w-full md:w-auto relative">
-            {loading && (
-              <span className="col-span-3 text-right text-[11px] font-semibold text-amber-400 animate-pulse">
-                Syncing catalog...
-              </span>
+          {/* Right Widescreen Interactive Featured Lot Spotlight */}
+          <div className="lg:col-span-5">
+            {spotlightBean ? (
+              <div
+                key={spotlightBean.id}
+                className="animate-tab-enter relative bg-[#12100e]/95 border border-stone-800/90 rounded-3xl overflow-hidden shadow-2xl shadow-black/60 group"
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-12">
+                  <div className="sm:col-span-5 relative h-52 sm:h-auto min-h-[220px] bg-stone-950 overflow-hidden">
+                    <Image
+                      src={spotlightBean.imageUrl || 'https://images.unsplash.com/photo-1587734195503-904fca47e0e9?w=600'}
+                      alt={spotlightBean.name}
+                      fill
+                      unoptimized
+                      sizes="(max-width: 1024px) 100vw, 22vw"
+                      className="object-cover group-hover:scale-105 transition-transform duration-700"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-black/20" />
+                    <div className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md border border-amber-500/30 text-[10px] font-mono uppercase tracking-wider text-amber-300">
+                      <Sparkles className="w-3 h-3" /> Lot Spotlight
+                    </div>
+                    <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-[10px] font-mono text-stone-300">
+                      <span>{spotlightBean.process}</span>
+                      <span>{spotlightBean.roastLevel.replace('_', ' ')}</span>
+                    </div>
+                  </div>
+
+                  <div className="sm:col-span-7 p-5 flex flex-col justify-between space-y-3">
+                    <div>
+                      <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-widest text-amber-400/90 mb-1">
+                        <span>{spotlightBean.origin}</span>
+                        <span>{spotlightBean.altitudeMasl ? `${spotlightBean.altitudeMasl} MASL` : 'MICRO-LOT'}</span>
+                      </div>
+                      <h2 className="font-serif text-xl font-semibold text-white leading-snug line-clamp-2">
+                        {spotlightBean.name}
+                      </h2>
+                      <div className="text-[11px] text-stone-400 mt-1 font-mono">
+                        Varietal: <span className="text-stone-200">{spotlightBean.varietal}</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 mt-3">
+                        {spotlightBean.tastingNotes
+                          .split(',')
+                          .slice(0, 3)
+                          .map((note, idx) => (
+                            <span
+                              key={idx}
+                              className="text-[10px] px-2 py-0.5 rounded-md bg-stone-900 border border-stone-800 text-stone-300"
+                            >
+                              {note.trim()}
+                            </span>
+                          ))}
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-stone-800/80 flex items-center justify-between gap-2">
+                      <button
+                        onClick={() => {
+                          setCalcDose(15);
+                          setActiveTab('calculator');
+                          showNotification(`Loaded ${spotlightBean.name} into Extraction Lab!`);
+                        }}
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 transition-colors"
+                      >
+                        Dial In This Lot <ArrowUpRight className="w-3.5 h-3.5" />
+                      </button>
+
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setSpotlightIdx((prev) => (prev - 1 + beans.length) % beans.length)}
+                          aria-label="Previous featured lot"
+                          className="p-1.5 rounded-lg bg-stone-900 hover:bg-stone-800 border border-stone-800 text-stone-400 hover:text-white transition-colors"
+                        >
+                          <ChevronLeft className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSpotlightIdx((prev) => (prev + 1) % beans.length)}
+                          aria-label="Next featured lot"
+                          className="p-1.5 rounded-lg bg-stone-900 hover:bg-stone-800 border border-stone-800 text-stone-400 hover:text-white transition-colors"
+                        >
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-[#12100e]/90 border border-stone-800/80 rounded-3xl p-6 space-y-4">
+                <div className="flex items-center justify-between text-[11px] font-mono uppercase tracking-widest text-amber-400">
+                  <span>Extraction Chamber</span>
+                  <span className="inline-flex items-center gap-1.5 text-stone-400">
+                    <Droplets className="w-3.5 h-3.5 text-amber-400 animate-pour-drop" /> Ready
+                  </span>
+                </div>
+                <div className="font-serif italic text-2xl text-stone-100">
+                  &ldquo;Precision water cadence unlocks sweetness, clarity, and origin terroir.&rdquo;
+                </div>
+                <div className="grid grid-cols-3 gap-2 pt-2 text-[11px] font-mono">
+                  <div className="bg-stone-950/80 border border-stone-800 rounded-xl p-3">
+                    <div className="text-stone-500">TARGET RATIO</div>
+                    <div className="text-amber-400 font-bold mt-0.5">1 : 15.0</div>
+                  </div>
+                  <div className="bg-stone-950/80 border border-stone-800 rounded-xl p-3">
+                    <div className="text-stone-500">WATER TEMP</div>
+                    <div className="text-stone-100 font-bold mt-0.5">92°C</div>
+                  </div>
+                  <div className="bg-stone-950/80 border border-stone-800 rounded-xl p-3">
+                    <div className="text-stone-500">EXTRACTION</div>
+                    <div className="text-emerald-400 font-bold mt-0.5">2m 45s</div>
+                  </div>
+                </div>
+              </div>
             )}
-            <div className="bg-stone-900/90 border border-stone-800 p-4 rounded-2xl text-center shadow-lg">
-              <div className="text-2xl font-black text-amber-400">{beans.length}</div>
-              <div className="text-[11px] text-stone-400 mt-1">Origins Cataloged</div>
-            </div>
-            <div className="bg-stone-900/90 border border-stone-800 p-4 rounded-2xl text-center shadow-lg">
-              <div className="text-2xl font-black text-amber-400">{recipes.length}</div>
-              <div className="text-[11px] text-stone-400 mt-1">Brew Guides</div>
-            </div>
-            <div className="bg-stone-900/90 border border-stone-800 p-4 rounded-2xl text-center shadow-lg">
-              <div className="text-2xl font-black text-emerald-400">{totalStockKg} kg</div>
-              <div className="text-[11px] text-stone-400 mt-1">Stock on Hand</div>
-            </div>
+          </div>
+        </div>
+
+        {/* Continuous Single-Origin Ticker Strip */}
+        <div className="border-t border-stone-800/70 bg-[#080706]/90 py-2 overflow-hidden">
+          <div className="animate-marquee flex items-center gap-8 text-[11px] font-mono uppercase tracking-[0.2em] text-stone-500">
+            {[
+              'PANAMA BOQUETE GESHA',
+              'COFFEA EUGENIOIDES · STEVIA SWEET',
+              'ACEH GAYO PANTAN MUSARA',
+              'ETHIOPIA GUJI HAMBELA',
+              'YEMEN HARAZ ALCHEMY',
+              'GULA AREN SIGNATURE LATTE',
+              'MONT BLANC CREAM COLD BREW',
+              'DARK ROAST SUMATRA MANDHELING',
+              'PANAMA BOQUETE GESHA',
+              'COFFEA EUGENIOIDES · STEVIA SWEET',
+              'ACEH GAYO PANTAN MUSARA',
+              'ETHIOPIA GUJI HAMBELA',
+              'YEMEN HARAZ ALCHEMY',
+              'GULA AREN SIGNATURE LATTE',
+              'MONT BLANC CREAM COLD BREW',
+              'DARK ROAST SUMATRA MANDHELING',
+            ].map((item, idx) => (
+              <span key={idx} className="inline-flex items-center gap-3 whitespace-nowrap hover:text-amber-300 transition-colors">
+                <span className="w-1 h-1 rounded-full bg-amber-500/70"></span>
+                {item}
+              </span>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Main Content Area */}
-      <main className="max-w-7xl mx-auto px-6 py-8 flex-1 w-full">
+      {/* Main Content Area (Full Widescreen Container) */}
+      <main className="max-w-[1640px] mx-auto px-4 sm:px-6 lg:px-10 py-8 flex-1 w-full">
         {backendOffline && (
-          <div className="mb-6 bg-amber-950/60 border border-amber-700/60 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
+          <div className="mb-6 bg-amber-950/50 border border-amber-700/50 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 animate-card-in">
             <div className="flex items-center gap-3">
               <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
               <div className="text-xs text-amber-100 leading-relaxed">
@@ -706,7 +918,7 @@ export default function Home() {
                 void loadData();
                 void calculateLiveRatio();
               }}
-              className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-stone-950 text-xs font-black transition-all shrink-0"
+              className="px-4 py-2 rounded-xl bg-[#d89946] hover:bg-[#e5aa59] text-stone-950 text-xs font-extrabold transition-all shrink-0"
             >
               Retry Connection
             </button>
@@ -715,34 +927,34 @@ export default function Home() {
 
         {/* TAB 1: BEANS EXPLORER */}
         {activeTab === 'beans' && (
-          <div className="space-y-6">
-            {/* Search and Filters */}
-            <div className="bg-stone-900/90 border border-stone-800 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-4">
+          <div className="space-y-6 animate-tab-enter">
+            {/* Editorial Filter & Search Bar */}
+            <div className="bg-[#12100e]/95 border border-stone-800/80 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-4 shadow-lg shadow-black/30">
               <div className="relative flex-1 min-w-[280px]">
                 <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-500" />
                 <input
                   type="text"
-                  placeholder="Search by origin (Panama, Ethiopia, Aceh...), varietal, or tasting notes..."
+                  placeholder="Search origin, varietal (Gesha, Eugenioides), or sensory notes..."
                   value={beanSearch}
                   onChange={(e) => setBeanSearch(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && loadData()}
-                  className="w-full bg-stone-950 border border-stone-800 pl-10 pr-4 py-2 rounded-xl text-xs text-stone-200 placeholder-stone-500 focus:outline-none focus:border-amber-500"
+                  className="w-full bg-stone-950/90 border border-stone-800/90 pl-10 pr-4 py-2.5 rounded-xl text-xs text-stone-200 placeholder-stone-500 focus:outline-none focus:border-amber-500/70 transition-colors"
                 />
               </div>
 
               {/* Filter Process */}
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-xs text-stone-400 font-bold flex items-center gap-1">
-                  <Filter className="w-3.5 h-3.5" /> Process:
+                <span className="text-[10px] font-mono uppercase tracking-widest text-stone-500 flex items-center gap-1 mr-1">
+                  <Filter className="w-3 h-3" /> Process
                 </span>
                 {['', 'WASHED', 'NATURAL', 'HONEY', 'ANAEROBIC', 'EXPERIMENTAL'].map((proc) => (
                   <button
                     key={proc}
                     onClick={() => setSelectedProcess(proc)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
+                    className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold tracking-wide border transition-all duration-200 ${
                       selectedProcess === proc
-                        ? 'bg-amber-600 text-stone-950 border-amber-500'
-                        : 'bg-stone-800/80 border-stone-700/70 text-stone-300 hover:bg-stone-800 hover:text-white'
+                        ? 'bg-[#d89946] text-stone-950 border-amber-400/80 font-bold shadow-sm'
+                        : 'bg-stone-950/80 border-stone-800 text-stone-400 hover:border-stone-700 hover:text-stone-100'
                     }`}
                   >
                     {proc || 'All'}
@@ -752,17 +964,17 @@ export default function Home() {
 
               {/* Filter Roast Level */}
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-xs text-stone-400 font-bold flex items-center gap-1">
-                  <Flame className="w-3.5 h-3.5" /> Roast:
+                <span className="text-[10px] font-mono uppercase tracking-widest text-stone-500 flex items-center gap-1 mr-1">
+                  <Flame className="w-3 h-3" /> Roast
                 </span>
                 {['', 'LIGHT', 'LIGHT_MEDIUM', 'MEDIUM', 'DARK'].map((roast) => (
                   <button
                     key={roast}
                     onClick={() => setSelectedRoast(roast)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
+                    className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold tracking-wide border transition-all duration-200 ${
                       selectedRoast === roast
-                        ? 'bg-amber-600 text-stone-950 border-amber-500'
-                        : 'bg-stone-800/80 border-stone-700/70 text-stone-300 hover:bg-stone-800 hover:text-white'
+                        ? 'bg-[#d89946] text-stone-950 border-amber-400/80 font-bold shadow-sm'
+                        : 'bg-stone-950/80 border-stone-800 text-stone-400 hover:border-stone-700 hover:text-stone-100'
                     }`}
                   >
                     {roast ? roast.replace('_', ' ') : 'All'}
@@ -773,7 +985,7 @@ export default function Home() {
 
             {/* Beans Grid */}
             {beans.length === 0 && !loading ? (
-              <div className="bg-stone-900 border border-stone-800 rounded-3xl p-12 text-center space-y-3">
+              <div className="bg-[#12100e] border border-stone-800 rounded-3xl p-12 text-center space-y-3">
                 <Coffee className="w-10 h-10 text-stone-600 mx-auto" />
                 <div className="text-sm font-bold text-stone-300">No coffee beans matched your current filters.</div>
                 <button
@@ -782,17 +994,21 @@ export default function Home() {
                     setSelectedProcess('');
                     setSelectedRoast('');
                   }}
-                  className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-stone-950 text-xs font-black transition-all"
+                  className="px-4 py-2 rounded-xl bg-[#d89946] hover:bg-[#e5aa59] text-stone-950 text-xs font-extrabold transition-all"
                 >
                   Reset Bean Filters
                 </button>
               </div>
             ) : null}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {beans.map((bean) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
+              {beans.map((bean, index) => {
+                const stockPct = Math.min(100, Math.max(8, Math.round((bean.stockGrams / 5000) * 100)));
+                const isLowStock = bean.stockGrams <= bean.minStockThreshold;
+                return (
                 <div
                   key={bean.id}
-                  className="bg-stone-900 border border-stone-800 rounded-3xl overflow-hidden hover:border-amber-500/50 transition-all flex flex-col group shadow-md"
+                  style={{ animationDelay: `${Math.min(index, 11) * 45}ms` }}
+                  className="animate-card-in bg-[#12100e] border border-stone-800/80 rounded-3xl overflow-hidden hover:border-amber-500/45 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-amber-950/25 transition-all duration-300 flex flex-col group"
                 >
                   <div className="relative h-52 w-full overflow-hidden bg-stone-950">
                     <Image
@@ -800,59 +1016,60 @@ export default function Home() {
                       alt={bean.name}
                       fill
                       unoptimized
-                      sizes="(max-width: 768px) 100vw, 33vw"
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1536px) 33vw, 25vw"
+                      className="object-cover group-hover:scale-105 transition-transform duration-700"
                     />
-                    <div className="absolute top-3 left-3 flex gap-2">
-                      <span className="px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider bg-stone-950/85 backdrop-blur-md text-amber-400 border border-amber-500/30">
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#12100e] via-black/15 to-black/35" />
+                    <div className="absolute top-3.5 left-3.5 right-3.5 flex items-center justify-between gap-2">
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-semibold uppercase tracking-widest bg-black/70 backdrop-blur-md text-amber-300 border border-amber-500/30">
                         {bean.process}
                       </span>
-                      <span className="px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider bg-stone-950/85 backdrop-blur-md text-stone-300 border border-stone-700">
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-semibold uppercase tracking-widest bg-black/70 backdrop-blur-md text-stone-200 border border-stone-700/80">
                         {bean.roastLevel.replace('_', ' ')}
                       </span>
                     </div>
 
-                    {/* Stock status badge */}
-                    <div className="absolute bottom-3 right-3">
-                      {bean.stockGrams <= bean.minStockThreshold ? (
-                        <span className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-extrabold bg-rose-950/90 border border-rose-700 text-rose-300 shadow-md">
-                          <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
-                          Low Stock: {bean.stockGrams}g
+                    {/* Stock indicator pill */}
+                    <div className="absolute bottom-3 left-3.5 right-3.5 flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-mono uppercase tracking-widest text-amber-300/95">
+                        {bean.origin}
+                      </span>
+                      {isLowStock ? (
+                        <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-rose-950/90 border border-rose-700/80 text-rose-200">
+                          <AlertTriangle className="w-3 h-3 text-rose-400" />
+                          {bean.stockGrams}g
                         </span>
                       ) : (
-                        <span className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-extrabold bg-emerald-950/90 border border-emerald-700 text-emerald-300 shadow-md">
-                          In Stock: {bean.stockGrams}g
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-emerald-950/85 border border-emerald-700/70 text-emerald-300">
+                          {bean.stockGrams}g lot
                         </span>
                       )}
                     </div>
                   </div>
 
-                  <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
+                  <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
                     <div>
-                      <div className="text-xs text-stone-400 mb-1 flex items-center justify-between">
-                        <span className="font-semibold text-amber-300">{bean.origin}</span>
-                        {bean.altitudeMasl && <span>{bean.altitudeMasl} masl</span>}
-                      </div>
-                      <h3 className="font-black text-lg text-white group-hover:text-amber-400 transition-colors leading-snug">
-                        {bean.name}
-                      </h3>
-                      <div className="text-xs text-stone-500 mt-1 mb-3">
-                        Varietal: <span className="text-stone-300 font-medium">{bean.varietal}</span>
+                      <div className="flex items-center justify-between gap-2 text-[10px] font-mono uppercase tracking-wider text-stone-500 mb-1.5">
+                        <span className="truncate">{bean.varietal}</span>
+                        {bean.altitudeMasl && <span className="shrink-0">{bean.altitudeMasl} MASL</span>}
                       </div>
 
-                      {/* Description snippet */}
+                      <h3 className="font-serif text-xl font-semibold text-stone-50 group-hover:text-amber-300 transition-colors leading-snug">
+                        {bean.name}
+                      </h3>
+
                       {bean.description && (
-                        <p className="text-xs text-stone-400 line-clamp-2 mb-3 leading-relaxed">
+                        <p className="text-xs text-stone-400 line-clamp-2 mt-2 mb-3 leading-relaxed">
                           {bean.description}
                         </p>
                       )}
 
-                      {/* Color-Coded Sensory Flavor Notes */}
+                      {/* Sensory Flavor Notes */}
                       <div className="flex flex-wrap gap-1.5 pt-1">
                         {bean.tastingNotes.split(',').map((note, idx) => (
                           <span
                             key={idx}
-                            className={`text-[11px] px-2.5 py-1 rounded-lg border font-medium ${getNoteBadgeStyle(
+                            className={`text-[10px] px-2.5 py-0.5 rounded-full border font-medium ${getNoteBadgeStyle(
                               note,
                             )}`}
                           >
@@ -862,29 +1079,43 @@ export default function Home() {
                       </div>
                     </div>
 
-                    <div className="border-t border-stone-800 pt-4 flex items-center justify-between mt-auto">
-                      <div>
-                        <div className="text-[10px] text-stone-500 uppercase font-semibold">Price per bag</div>
-                        <div className="text-base font-black text-amber-400">
-                          Rp {bean.price.toLocaleString('id-ID')}
-                        </div>
+                    <div className="space-y-3 pt-2">
+                      {/* Subtle Roastery Reserve Capacity Bar */}
+                      <div className="w-full h-1 rounded-full bg-stone-900 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-700 ${
+                            isLowStock ? 'bg-rose-500' : 'bg-gradient-to-r from-amber-600 to-emerald-500'
+                          }`}
+                          style={{ width: `${stockPct}%` }}
+                        />
                       </div>
 
-                      <button
-                        onClick={() => {
-                          setCalcDose(15);
-                          setActiveTab('calculator');
-                          showNotification(`Loaded ${bean.name} into Brew Calculator!`);
-                        }}
-                        className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-stone-800 hover:bg-amber-600 hover:text-stone-950 text-stone-200 text-xs font-extrabold transition-all"
-                      >
-                        <Scale className="w-3.5 h-3.5" />
-                        Dial In Recipe
-                      </button>
+                      <div className="flex items-center justify-between pt-1">
+                        <div>
+                          <div className="text-[10px] font-mono uppercase tracking-wider text-stone-500">250g Bag</div>
+                          <div className="font-mono text-sm font-bold text-amber-300">
+                            Rp {bean.price.toLocaleString('id-ID')}
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => {
+                            setCalcDose(15);
+                            setActiveTab('calculator');
+                            showNotification(`Loaded ${bean.name} into Extraction Lab!`);
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-stone-900 hover:bg-[#d89946] border border-stone-800 hover:border-amber-400 text-stone-200 hover:text-stone-950 text-xs font-bold transition-all duration-200"
+                        >
+                          <Scale className="w-3.5 h-3.5" />
+                          Dial In
+                          <ArrowUpRight className="w-3 h-3" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -901,8 +1132,8 @@ export default function Home() {
               : recipes.filter((r) => categoryMethods.some((m) => m.id === r.method));
 
           return (
-          <div className="space-y-6">
-            <div className="bg-stone-900/90 border border-stone-800 p-4 rounded-2xl space-y-4">
+          <div className="space-y-6 animate-tab-enter">
+            <div className="bg-[#12100e]/95 border border-stone-800/80 p-4 rounded-2xl space-y-4 shadow-lg shadow-black/30">
               {/* Top Bar: Search + Category Tabs + Share CTA */}
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="relative flex-1 min-w-[240px]">
@@ -913,7 +1144,7 @@ export default function Home() {
                     value={recipeSearch}
                     onChange={(e) => setRecipeSearch(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && loadData()}
-                    className="w-full bg-stone-950 border border-stone-800 pl-10 pr-4 py-2 rounded-xl text-xs text-stone-200 placeholder-stone-500 focus:outline-none focus:border-amber-500"
+                    className="w-full bg-stone-950/90 border border-stone-800/90 pl-10 pr-4 py-2.5 rounded-xl text-xs text-stone-200 placeholder-stone-500 focus:outline-none focus:border-amber-500/70 transition-colors"
                   />
                 </div>
 
@@ -931,10 +1162,10 @@ export default function Home() {
                         setRecipeCategory(cat.id as 'all' | 'manual' | 'classic' | 'trending');
                         setSelectedMethod('');
                       }}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
                         recipeCategory === cat.id
-                          ? 'bg-amber-600 text-stone-950 font-black shadow-sm'
-                          : 'text-stone-400 hover:text-stone-200'
+                          ? 'bg-[#d89946] text-stone-950 font-bold shadow-sm'
+                          : 'text-stone-400 hover:text-stone-100'
                       }`}
                     >
                       {cat.label}
@@ -951,23 +1182,23 @@ export default function Home() {
                       setShowNewRecipeModal(true);
                     }
                   }}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-amber-600 hover:bg-amber-500 text-stone-950 font-extrabold text-xs rounded-xl shadow-md transition-all shrink-0"
+                  className="flex items-center gap-2 px-4 py-2.5 bg-[#d89946] hover:bg-[#e5aa59] text-stone-950 font-bold text-xs rounded-xl shadow-md transition-all shrink-0"
                 >
-                  <Plus className="w-4 h-4" /> Share New Recipe
+                  <Plus className="w-4 h-4" /> Share Recipe
                 </button>
               </div>
 
               {/* Clean Device Pills Row */}
-              <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-stone-800/70">
-                <span className="text-[11px] text-stone-400 font-bold uppercase tracking-wider mr-1">
-                  Device:
+              <div className="flex items-center gap-2 flex-wrap pt-2.5 border-t border-stone-800/70">
+                <span className="text-[10px] font-mono text-stone-500 uppercase tracking-widest mr-1">
+                  Device
                 </span>
                 <button
                   onClick={() => setSelectedMethod('')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
+                  className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all duration-200 ${
                     selectedMethod === ''
-                      ? 'bg-amber-600 text-stone-950 border-amber-500 font-black shadow-sm'
-                      : 'bg-stone-800/80 border-stone-700/70 text-stone-300 hover:bg-stone-800 hover:text-white'
+                      ? 'bg-[#d89946] text-stone-950 border-amber-400/80 font-bold shadow-sm'
+                      : 'bg-stone-950/80 border-stone-800 text-stone-400 hover:border-stone-700 hover:text-stone-100'
                   }`}
                 >
                   All ({visibleRecipes.length})
@@ -976,10 +1207,10 @@ export default function Home() {
                   <button
                     key={m.id}
                     onClick={() => setSelectedMethod(m.id)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
+                    className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all duration-200 ${
                       selectedMethod === m.id
-                        ? 'bg-amber-600 text-stone-950 border-amber-500 font-black shadow-sm'
-                        : 'bg-stone-800/80 border-stone-700/70 text-stone-300 hover:bg-stone-800 hover:text-white'
+                        ? 'bg-[#d89946] text-stone-950 border-amber-400/80 font-bold shadow-sm'
+                        : 'bg-stone-950/80 border-stone-800 text-stone-400 hover:border-stone-700 hover:text-stone-100'
                     }`}
                   >
                     {m.label}
@@ -989,7 +1220,7 @@ export default function Home() {
             </div>
 
             {visibleRecipes.length === 0 && !loading ? (
-              <div className="bg-stone-900 border border-stone-800 rounded-3xl p-12 text-center space-y-3">
+              <div className="bg-[#12100e] border border-stone-800 rounded-3xl p-12 text-center space-y-3">
                 <BookOpen className="w-10 h-10 text-stone-600 mx-auto" />
                 <div className="text-sm font-bold text-stone-300">No brew guides matched your search or device filter.</div>
                 <button
@@ -998,7 +1229,7 @@ export default function Home() {
                     setRecipeCategory('all');
                     setSelectedMethod('');
                   }}
-                  className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-stone-950 text-xs font-black transition-all"
+                  className="px-4 py-2 rounded-xl bg-[#d89946] hover:bg-[#e5aa59] text-stone-950 text-xs font-extrabold transition-all"
                 >
                   Show All Brew Guides
                 </button>
@@ -1006,67 +1237,68 @@ export default function Home() {
             ) : null}
 
             {/* Recipes Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {visibleRecipes.map((recipe) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
+              {visibleRecipes.map((recipe, index) => (
                 <div
                   key={recipe.id}
-                  className="bg-stone-900 border border-stone-800 rounded-3xl p-6 flex flex-col justify-between hover:border-amber-500/50 transition-all group shadow-md"
+                  style={{ animationDelay: `${Math.min(index, 11) * 45}ms` }}
+                  className="animate-card-in bg-[#12100e] border border-stone-800/80 rounded-3xl p-6 flex flex-col justify-between hover:border-amber-500/45 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-amber-950/25 transition-all duration-300 group"
                 >
                   <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="px-3 py-1 rounded-md text-xs font-extrabold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                    <div className="flex items-center justify-between gap-2 mb-3.5">
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-semibold tracking-wider bg-amber-500/10 text-amber-300 border border-amber-500/25">
                         {formatBrewMethodLabel(recipe.method)}
                       </span>
-                      <div className="flex items-center gap-1 text-amber-400 text-xs font-bold">
+                      <div className="flex items-center gap-1 font-mono text-amber-400 text-xs font-bold">
                         <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                         <span>{recipe.averageRating ?? '5.0'}</span>
-                        <span className="text-stone-500 font-normal">
-                          ({recipe._count?.reviews ?? 0} reviews)
+                        <span className="text-stone-500 font-normal text-[10px]">
+                          ({recipe._count?.reviews ?? 0})
                         </span>
                       </div>
                     </div>
 
-                    <h3 className="font-extrabold text-lg text-white mb-2 group-hover:text-amber-400 transition-colors leading-snug">
+                    <h3 className="font-serif text-xl font-semibold text-stone-50 mb-2 group-hover:text-amber-300 transition-colors leading-snug">
                       {recipe.title}
                     </h3>
                     <p className="text-stone-400 text-xs line-clamp-2 mb-4 leading-relaxed">
                       {recipe.description || 'Dialed in specialty extraction profile.'}
                     </p>
 
-                    {/* Metric Badges */}
-                    <div className="grid grid-cols-4 gap-2 bg-stone-950 p-3 rounded-2xl border border-stone-800/80 mb-4 text-center">
+                    {/* Mono Telemetry Grid */}
+                    <div className="grid grid-cols-4 gap-1.5 bg-stone-950/90 p-3 rounded-2xl border border-stone-800/80 mb-4 text-center font-mono">
                       <div>
-                        <div className="text-[10px] text-stone-500">Coffee</div>
-                        <div className="text-xs font-black text-stone-200">{recipe.coffeeDoseGrams}g</div>
+                        <div className="text-[9px] uppercase tracking-wider text-stone-500">Dose</div>
+                        <div className="text-xs font-bold text-stone-100 mt-0.5">{recipe.coffeeDoseGrams}g</div>
                       </div>
-                      <div>
-                        <div className="text-[10px] text-stone-500">Ratio</div>
-                        <div className="text-xs font-black text-amber-400">1:{recipe.targetRatio}</div>
+                      <div className="border-l border-stone-800/70">
+                        <div className="text-[9px] uppercase tracking-wider text-stone-500">Ratio</div>
+                        <div className="text-xs font-bold text-amber-400 mt-0.5">1:{recipe.targetRatio}</div>
                       </div>
-                      <div>
-                        <div className="text-[10px] text-stone-500">Temp</div>
-                        <div className="text-xs font-black text-stone-200">{recipe.waterTempCelsius}°C</div>
+                      <div className="border-l border-stone-800/70">
+                        <div className="text-[9px] uppercase tracking-wider text-stone-500">Temp</div>
+                        <div className="text-xs font-bold text-stone-100 mt-0.5">{recipe.waterTempCelsius}°C</div>
                       </div>
-                      <div>
-                        <div className="text-[10px] text-stone-500">Time</div>
-                        <div className="text-xs font-black text-stone-200">
-                          {Math.floor(recipe.totalBrewTimeSeconds / 60)}m {recipe.totalBrewTimeSeconds % 60}s
+                      <div className="border-l border-stone-800/70">
+                        <div className="text-[9px] uppercase tracking-wider text-stone-500">Time</div>
+                        <div className="text-xs font-bold text-stone-100 mt-0.5">
+                          {formatDurationShort(recipe.totalBrewTimeSeconds)}
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="border-t border-stone-800 pt-4 flex items-center justify-between">
+                  <div className="border-t border-stone-800/80 pt-4 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Image
                         src={recipe.user?.avatarUrl || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100'}
                         alt="author"
-                        width={28}
-                        height={28}
+                        width={26}
+                        height={26}
                         unoptimized
-                        className="w-7 h-7 rounded-full object-cover border border-stone-700"
+                        className="w-6 h-6 rounded-full object-cover border border-stone-700"
                       />
-                      <span className="text-xs text-stone-300 font-semibold">{recipe.user?.name || 'Barista'}</span>
+                      <span className="text-xs text-stone-400 font-medium">{recipe.user?.name || 'Barista'}</span>
                     </div>
 
                     <button
@@ -1078,9 +1310,9 @@ export default function Home() {
                           showNotification(getErrorMessage(err, 'Failed to load recipe details'), 'error');
                         }
                       }}
-                      className="flex items-center gap-1 text-xs font-bold text-amber-400 hover:text-amber-300 transition-colors"
+                      className="inline-flex items-center gap-1 text-xs font-bold text-amber-400 hover:text-amber-300 transition-colors group/btn"
                     >
-                      Steps & Timeline <ChevronRight className="w-4 h-4" />
+                      Timeline <ChevronRight className="w-4 h-4 group-hover/btn:translate-x-0.5 transition-transform" />
                     </button>
                   </div>
                 </div>
@@ -1092,7 +1324,7 @@ export default function Home() {
 
         {/* TAB 3: DYNAMIC BREW RATIO CALCULATOR & LIVE TIMER */}
         {activeTab === 'calculator' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-tab-enter">
             {/* Input Controls */}
             <div className="bg-stone-900 border border-stone-800 rounded-3xl p-6 lg:p-8 space-y-6 shadow-xl">
               <div>
@@ -1354,7 +1586,7 @@ export default function Home() {
 
         {/* TAB 4: ROASTERY INVENTORY DASHBOARD (RBAC) */}
         {activeTab === 'roastery' && (
-          <div className="space-y-6">
+          <div className="space-y-6 animate-tab-enter">
             {currentUser?.role !== 'ROASTER' && currentUser?.role !== 'ADMIN' ? (
               <div className="bg-stone-900 border border-stone-800 rounded-3xl p-12 text-center max-w-xl mx-auto space-y-4 shadow-xl">
                 <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mx-auto">
@@ -1564,24 +1796,26 @@ export default function Home() {
 
         {/* TAB 5: BEGINNER ACADEMY, GEAR & TASTING WHEEL */}
         {activeTab === 'tutorial' && (
-          <CoffeeTutorialSection
-            onTryInCalculator={(method, dose, ratio) => {
-              const matched = BREW_METHOD_OPTIONS.find((m) => m.id === method);
-              if (matched) setCalcCategory(matched.group);
-              setCalcMethod(method);
-              setCalcDose(dose);
-              setCalcRatio(ratio);
-              setActiveTab('calculator');
-              showNotification(`Loaded ${formatBrewMethodLabel(method)} into Ratio Calculator!`);
-            }}
-            onExploreBeansByNote={(keyword) => {
-              setSelectedProcess('');
-              setSelectedRoast('');
-              setBeanSearch(keyword);
-              setActiveTab('beans');
-              showNotification(`Filtering Origins Catalog for "${keyword}" notes`);
-            }}
-          />
+          <div className="animate-tab-enter">
+            <CoffeeTutorialSection
+              onTryInCalculator={(method, dose, ratio) => {
+                const matched = BREW_METHOD_OPTIONS.find((m) => m.id === method);
+                if (matched) setCalcCategory(matched.group);
+                setCalcMethod(method);
+                setCalcDose(dose);
+                setCalcRatio(ratio);
+                setActiveTab('calculator');
+                showNotification(`Loaded ${formatBrewMethodLabel(method)} into Ratio Calculator!`);
+              }}
+              onExploreBeansByNote={(keyword) => {
+                setSelectedProcess('');
+                setSelectedRoast('');
+                setBeanSearch(keyword);
+                setActiveTab('beans');
+                showNotification(`Filtering Origins Catalog for "${keyword}" notes`);
+              }}
+            />
+          </div>
         )}
       </main>
 
@@ -2171,10 +2405,20 @@ export default function Home() {
         </div>
       )}
 
-      {/* Footer */}
-      <footer className="bg-stone-900 border-t border-stone-800 py-6 text-center text-xs text-stone-500">
-        <p>BrewLab PRO — Final Project Framework Programming · ITS Informatics 2026</p>
-        <p className="mt-1 text-[11px] text-stone-600">Built with NestJS, Prisma ORM, PostgreSQL & Next.js App Router</p>
+      {/* Editorial Footer */}
+      <footer className="bg-[#0b0908] border-t border-stone-800/80 py-7">
+        <div className="max-w-[1640px] mx-auto px-4 sm:px-6 lg:px-10 flex flex-wrap items-center justify-between gap-4 text-xs text-stone-500">
+          <div className="flex items-center gap-3">
+            <span className="font-serif text-base font-semibold text-stone-200">BrewLab Atelier</span>
+            <span className="text-stone-700">/</span>
+            <span className="font-mono text-[11px] uppercase tracking-wider text-stone-500">
+              Final Project PBKK · ITS Informatics 2026
+            </span>
+          </div>
+          <div className="font-mono text-[10px] uppercase tracking-widest text-stone-500">
+            Single-Origin Archive · Extraction Lab · Roastery Inventory
+          </div>
+        </div>
       </footer>
     </div>
   );
