@@ -25,8 +25,10 @@ import {
   RotateCcw,
   ShieldCheck,
   Award,
+  GraduationCap,
 } from 'lucide-react';
 import { api } from '../lib/api';
+import CoffeeTutorialSection from '../components/CoffeeTutorialSection';
 import {
   BrewMethod,
   BrewRecipe,
@@ -88,7 +90,7 @@ function formatDurationShort(seconds: number): string {
 
 export default function Home() {
   // Navigation
-  const [activeTab, setActiveTab] = useState<'beans' | 'recipes' | 'calculator' | 'roastery'>('beans');
+  const [activeTab, setActiveTab] = useState<'beans' | 'recipes' | 'calculator' | 'tutorial' | 'roastery'>('beans');
 
   // Auth State
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -104,15 +106,19 @@ export default function Home() {
   const [beans, setBeans] = useState<CoffeeBean[]>([]);
   const [recipes, setRecipes] = useState<BrewRecipe[]>([]);
   const [loading, setLoading] = useState(false);
+  const [backendOffline, setBackendOffline] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Search & Filter State
   const [beanSearch, setBeanSearch] = useState('');
   const [selectedProcess, setSelectedProcess] = useState<string>('');
   const [selectedRoast, setSelectedRoast] = useState<string>('');
+  const [recipeSearch, setRecipeSearch] = useState('');
+  const [recipeCategory, setRecipeCategory] = useState<'all' | 'manual' | 'classic' | 'trending'>('all');
   const [selectedMethod, setSelectedMethod] = useState<string>('');
 
   // Calculator State
+  const [calcCategory, setCalcCategory] = useState<'manual' | 'classic' | 'trending'>('manual');
   const [calcMethod, setCalcMethod] = useState<BrewMethod>('V60');
   const [calcDose, setCalcDose] = useState<number>(15);
   const [calcRatio, setCalcRatio] = useState<number>(15);
@@ -173,18 +179,20 @@ export default function Home() {
           limit: 50,
         }),
         api.getRecipes({
+          search: recipeSearch || undefined,
           method: selectedMethod || undefined,
           limit: 50,
         }),
       ]);
       setBeans(beansRes.data);
       setRecipes(recipesRes.data);
-    } catch (err) {
-      console.error(err);
+      setBackendOffline(false);
+    } catch {
+      setBackendOffline(true);
     } finally {
       setLoading(false);
     }
-  }, [beanSearch, selectedProcess, selectedRoast, selectedMethod]);
+  }, [beanSearch, selectedProcess, selectedRoast, recipeSearch, selectedMethod]);
 
   const calculateLiveRatio = useCallback(async () => {
     try {
@@ -194,8 +202,40 @@ export default function Home() {
         method: calcMethod,
       });
       setCalcResult(result);
-    } catch (err) {
-      console.error(err);
+      setBackendOffline(false);
+    } catch {
+      const totalWater = Math.round(calcDose * calcRatio);
+      const isCold = [
+        'COLD_BREW',
+        'GULA_AREN_LATTE',
+        'MONT_BLANC',
+        'ESPRESSO_TONIC',
+        'DIRTY_LATTE',
+        'SPANISH_LATTE',
+        'ORANGE_ESPRESSO',
+      ].includes(calcMethod);
+      setCalcResult({
+        coffeeDoseGrams: calcDose,
+        targetRatio: calcRatio,
+        totalWaterMl: totalWater,
+        recommendedWaterTemp: isCold ? 4 : 92,
+        estimatedBrewTimeSeconds: calcMethod === 'COLD_BREW' ? 43200 : isCold ? 45 : 180,
+        method: calcMethod,
+        generatedPourSteps: [
+          {
+            stepOrder: 1,
+            startTimeSeconds: 0,
+            waterAmountMl: Math.round(totalWater * 0.3),
+            instruction: `Initial phase with ${Math.round(totalWater * 0.3)}ml (offline preview — start backend for full recipe steps).`,
+          },
+          {
+            stepOrder: 2,
+            startTimeSeconds: 30,
+            waterAmountMl: totalWater - Math.round(totalWater * 0.3),
+            instruction: `Finish extraction up to ${totalWater}ml total.`,
+          },
+        ],
+      });
     }
   }, [calcDose, calcRatio, calcMethod]);
 
@@ -457,7 +497,7 @@ export default function Home() {
             className={`px-3 py-1 rounded-lg border text-[11px] font-semibold transition-all ${
               currentUser?.role === 'ROASTER'
                 ? 'bg-amber-600 text-stone-950 border-amber-500 shadow-md font-bold'
-                : 'bg-stone-850 border-stone-750 hover:bg-stone-800 text-stone-300'
+                : 'bg-stone-800 border-stone-700 hover:bg-stone-700 text-stone-300'
             }`}
           >
             Roaster Account (Manage Stock & Catalog)
@@ -467,7 +507,7 @@ export default function Home() {
             className={`px-3 py-1 rounded-lg border text-[11px] font-semibold transition-all ${
               currentUser?.role === 'BREWER'
                 ? 'bg-amber-600 text-stone-950 border-amber-500 shadow-md font-bold'
-                : 'bg-stone-850 border-stone-750 hover:bg-stone-800 text-stone-300'
+                : 'bg-stone-800 border-stone-700 hover:bg-stone-700 text-stone-300'
             }`}
           >
             Brewer Account (Recipes & Reviews)
@@ -477,7 +517,7 @@ export default function Home() {
             className={`px-3 py-1 rounded-lg border text-[11px] font-semibold transition-all ${
               currentUser?.role === 'ADMIN'
                 ? 'bg-amber-600 text-stone-950 border-amber-500 shadow-md font-bold'
-                : 'bg-stone-850 border-stone-750 hover:bg-stone-800 text-stone-300'
+                : 'bg-stone-800 border-stone-700 hover:bg-stone-700 text-stone-300'
             }`}
           >
             Admin Account
@@ -487,26 +527,26 @@ export default function Home() {
 
       {/* Main Navigation Header */}
       <header className="bg-stone-900/90 border-b border-stone-800 sticky top-0 z-40 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-6 h-18 flex items-center justify-between">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTab('beans')}>
-            <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-amber-600 to-amber-400 flex items-center justify-center shadow-lg shadow-amber-900/30">
-              <Coffee className="w-6 h-6 text-stone-950 stroke-[2.5]" />
+        <div className="max-w-7xl mx-auto px-6 py-3 flex flex-wrap xl:flex-nowrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3 cursor-pointer shrink-0" onClick={() => setActiveTab('beans')}>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-600 to-amber-400 flex items-center justify-center shadow-lg shadow-amber-900/30">
+              <Coffee className="w-5 h-5 text-stone-950 stroke-[2.5]" />
             </div>
             <div>
-              <div className="font-extrabold text-xl tracking-tight text-white flex items-center gap-2">
-                BrewLab <span className="text-[11px] px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">PRO</span>
+              <div className="font-extrabold text-lg tracking-tight text-white flex items-center gap-2">
+                BrewLab <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">PRO</span>
               </div>
-              <div className="text-[11px] text-stone-400 font-medium">Single-Origin Coffee Hub & Recipe Dial-in</div>
+              <div className="text-[11px] text-stone-400 font-medium hidden sm:block">Single-Origin Coffee Hub & Recipe Dial-in</div>
             </div>
           </div>
 
-          {/* Navigation Tabs */}
-          <nav className="hidden md:flex items-center gap-1.5 bg-stone-950/80 p-1.5 rounded-xl border border-stone-800">
+          {/* Navigation Tabs (Responsive, no horizontal scrollbar) */}
+          <nav className="order-3 xl:order-2 w-full xl:w-auto flex flex-wrap xl:flex-nowrap items-center justify-center gap-1 bg-stone-950/90 p-1.5 rounded-xl border border-stone-800">
             <button
               onClick={() => setActiveTab('beans')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
                 activeTab === 'beans'
-                  ? 'bg-stone-850 text-amber-400 border border-stone-700 shadow-sm'
+                  ? 'bg-stone-800 text-amber-400 border border-stone-700 shadow-sm'
                   : 'text-stone-400 hover:text-stone-200'
               }`}
             >
@@ -515,9 +555,9 @@ export default function Home() {
             </button>
             <button
               onClick={() => setActiveTab('recipes')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
                 activeTab === 'recipes'
-                  ? 'bg-stone-850 text-amber-400 border border-stone-700 shadow-sm'
+                  ? 'bg-stone-800 text-amber-400 border border-stone-700 shadow-sm'
                   : 'text-stone-400 hover:text-stone-200'
               }`}
             >
@@ -526,9 +566,9 @@ export default function Home() {
             </button>
             <button
               onClick={() => setActiveTab('calculator')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
                 activeTab === 'calculator'
-                  ? 'bg-stone-850 text-amber-400 border border-stone-700 shadow-sm'
+                  ? 'bg-stone-800 text-amber-400 border border-stone-700 shadow-sm'
                   : 'text-stone-400 hover:text-stone-200'
               }`}
             >
@@ -536,25 +576,39 @@ export default function Home() {
               Ratio Calculator
             </button>
             <button
+              onClick={() => setActiveTab('tutorial')}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
+                activeTab === 'tutorial'
+                  ? 'bg-stone-800 text-amber-400 border border-stone-700 shadow-sm'
+                  : 'text-stone-400 hover:text-stone-200'
+              }`}
+            >
+              <GraduationCap className="w-3.5 h-3.5" />
+              Coffee 101 & Gear
+            </button>
+            <button
               onClick={() => setActiveTab('roastery')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
                 activeTab === 'roastery'
-                  ? 'bg-stone-850 text-amber-400 border border-stone-700 shadow-sm'
+                  ? 'bg-stone-800 text-amber-400 border border-stone-700 shadow-sm'
                   : 'text-stone-400 hover:text-stone-200'
               }`}
             >
               <Package className="w-3.5 h-3.5" />
               Roastery Stock
               {lowStockCount > 0 && (
-                <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+                <span className="relative flex h-2 w-2 shrink-0" title="Low stock alert">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                </span>
               )}
             </button>
           </nav>
 
-          {/* User Account / Auth Button */}
-          <div className="flex items-center gap-3">
+          {/* User Account / Auth Button - Always Pinned Top Right */}
+          <div className="order-2 xl:order-3 ml-auto xl:ml-0 flex items-center gap-3 shrink-0">
             {currentUser ? (
-              <div className="flex items-center gap-3 bg-stone-850 pl-3 pr-2 py-1.5 rounded-xl border border-stone-750">
+              <div className="flex items-center gap-3 bg-stone-800 pl-3 pr-2 py-1.5 rounded-xl border border-stone-700">
                 <div className="text-right">
                   <div className="text-xs font-bold text-stone-200">{currentUser.name}</div>
                   <div className="text-[10px] uppercase font-bold tracking-wider text-amber-400 flex items-center justify-end gap-1">
@@ -573,7 +627,7 @@ export default function Home() {
                 <button
                   onClick={handleLogout}
                   title="Sign out"
-                  className="p-1.5 hover:bg-stone-750 text-stone-400 hover:text-rose-400 rounded-lg transition-colors"
+                  className="p-1.5 hover:bg-stone-700 text-stone-400 hover:text-rose-400 rounded-lg transition-colors"
                 >
                   <LogOut className="w-4 h-4" />
                 </button>
@@ -635,6 +689,30 @@ export default function Home() {
 
       {/* Main Content Area */}
       <main className="max-w-7xl mx-auto px-6 py-8 flex-1 w-full">
+        {backendOffline && (
+          <div className="mb-6 bg-amber-950/60 border border-amber-700/60 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
+              <div className="text-xs text-amber-100 leading-relaxed">
+                <strong className="text-amber-300">Backend API belum aktif di http://localhost:3001/api.</strong>{' '}
+                Jalankan backend di terminal terpisah:{' '}
+                <code className="px-2 py-0.5 rounded bg-stone-950 border border-stone-800 text-amber-300 font-mono">
+                  cd backend &amp;&amp; pnpm run start:dev
+                </code>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                void loadData();
+                void calculateLiveRatio();
+              }}
+              className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-stone-950 text-xs font-black transition-all shrink-0"
+            >
+              Retry Connection
+            </button>
+          </div>
+        )}
+
         {/* TAB 1: BEANS EXPLORER */}
         {activeTab === 'beans' && (
           <div className="space-y-6">
@@ -661,10 +739,10 @@ export default function Home() {
                   <button
                     key={proc}
                     onClick={() => setSelectedProcess(proc)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
                       selectedProcess === proc
-                        ? 'bg-amber-600 text-stone-950'
-                        : 'bg-stone-850 text-stone-400 hover:text-stone-200'
+                        ? 'bg-amber-600 text-stone-950 border-amber-500'
+                        : 'bg-stone-800/80 border-stone-700/70 text-stone-300 hover:bg-stone-800 hover:text-white'
                     }`}
                   >
                     {proc || 'All'}
@@ -681,10 +759,10 @@ export default function Home() {
                   <button
                     key={roast}
                     onClick={() => setSelectedRoast(roast)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
                       selectedRoast === roast
-                        ? 'bg-amber-600 text-stone-950'
-                        : 'bg-stone-850 text-stone-400 hover:text-stone-200'
+                        ? 'bg-amber-600 text-stone-950 border-amber-500'
+                        : 'bg-stone-800/80 border-stone-700/70 text-stone-300 hover:bg-stone-800 hover:text-white'
                     }`}
                   >
                     {roast ? roast.replace('_', ' ') : 'All'}
@@ -694,6 +772,22 @@ export default function Home() {
             </div>
 
             {/* Beans Grid */}
+            {beans.length === 0 && !loading ? (
+              <div className="bg-stone-900 border border-stone-800 rounded-3xl p-12 text-center space-y-3">
+                <Coffee className="w-10 h-10 text-stone-600 mx-auto" />
+                <div className="text-sm font-bold text-stone-300">No coffee beans matched your current filters.</div>
+                <button
+                  onClick={() => {
+                    setBeanSearch('');
+                    setSelectedProcess('');
+                    setSelectedRoast('');
+                  }}
+                  className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-stone-950 text-xs font-black transition-all"
+                >
+                  Reset Bean Filters
+                </button>
+              </div>
+            ) : null}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {beans.map((bean) => (
                 <div
@@ -796,46 +890,124 @@ export default function Home() {
         )}
 
         {/* TAB 2: BREW GUIDES & RECIPES */}
-        {activeTab === 'recipes' && (
+        {activeTab === 'recipes' && (() => {
+          const categoryMethods =
+            recipeCategory === 'all'
+              ? BREW_METHOD_OPTIONS
+              : BREW_METHOD_OPTIONS.filter((m) => m.group === recipeCategory);
+          const visibleRecipes =
+            recipeCategory === 'all' || selectedMethod
+              ? recipes
+              : recipes.filter((r) => categoryMethods.some((m) => m.id === r.method));
+
+          return (
           <div className="space-y-6">
-            <div className="bg-stone-900/90 border border-stone-800 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-xs text-stone-400 font-bold flex items-center gap-1 mr-1">
+            <div className="bg-stone-900/90 border border-stone-800 p-4 rounded-2xl space-y-4">
+              {/* Top Bar: Search + Category Tabs + Share CTA */}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="relative flex-1 min-w-[240px]">
+                  <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-500" />
+                  <input
+                    type="text"
+                    placeholder="Search brew guides (Gula Aren, Mont Blanc, Eugenioides, V60...)"
+                    value={recipeSearch}
+                    onChange={(e) => setRecipeSearch(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && loadData()}
+                    className="w-full bg-stone-950 border border-stone-800 pl-10 pr-4 py-2 rounded-xl text-xs text-stone-200 placeholder-stone-500 focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                {/* Category Segmented Tabs */}
+                <div className="flex items-center gap-1 bg-stone-950 p-1 rounded-xl border border-stone-800">
+                  {[
+                    { id: 'all', label: 'All Guides' },
+                    { id: 'manual', label: 'Manual Brew' },
+                    { id: 'classic', label: 'Cafe Classics' },
+                    { id: 'trending', label: '🔥 Trending' },
+                  ].map((cat) => (
+                    <button
+                      key={cat.id}
+                      onClick={() => {
+                        setRecipeCategory(cat.id as 'all' | 'manual' | 'classic' | 'trending');
+                        setSelectedMethod('');
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                        recipeCategory === cat.id
+                          ? 'bg-amber-600 text-stone-950 font-black shadow-sm'
+                          : 'text-stone-400 hover:text-stone-200'
+                      }`}
+                    >
+                      {cat.label}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => {
+                    if (!currentUser) {
+                      showNotification('Please sign in to share a recipe', 'error');
+                      setShowAuthModal(true);
+                    } else {
+                      setShowNewRecipeModal(true);
+                    }
+                  }}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-amber-600 hover:bg-amber-500 text-stone-950 font-extrabold text-xs rounded-xl shadow-md transition-all shrink-0"
+                >
+                  <Plus className="w-4 h-4" /> Share New Recipe
+                </button>
+              </div>
+
+              {/* Clean Device Pills Row */}
+              <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-stone-800/70">
+                <span className="text-[11px] text-stone-400 font-bold uppercase tracking-wider mr-1">
                   Device:
                 </span>
-                {[{ id: '', label: 'All Devices' }, ...BREW_METHOD_OPTIONS].map((m) => (
+                <button
+                  onClick={() => setSelectedMethod('')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
+                    selectedMethod === ''
+                      ? 'bg-amber-600 text-stone-950 border-amber-500 font-black shadow-sm'
+                      : 'bg-stone-800/80 border-stone-700/70 text-stone-300 hover:bg-stone-800 hover:text-white'
+                  }`}
+                >
+                  All ({visibleRecipes.length})
+                </button>
+                {categoryMethods.map((m) => (
                   <button
                     key={m.id}
                     onClick={() => setSelectedMethod(m.id)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
                       selectedMethod === m.id
-                        ? 'bg-amber-600 text-stone-950 font-black shadow-md'
-                        : 'bg-stone-850 text-stone-400 hover:text-stone-200'
+                        ? 'bg-amber-600 text-stone-950 border-amber-500 font-black shadow-sm'
+                        : 'bg-stone-800/80 border-stone-700/70 text-stone-300 hover:bg-stone-800 hover:text-white'
                     }`}
                   >
                     {m.label}
                   </button>
                 ))}
               </div>
-
-              <button
-                onClick={() => {
-                  if (!currentUser) {
-                    showNotification('Please sign in to share a recipe', 'error');
-                    setShowAuthModal(true);
-                  } else {
-                    setShowNewRecipeModal(true);
-                  }
-                }}
-                className="flex items-center gap-2 px-4 py-2.5 bg-amber-600 hover:bg-amber-500 text-stone-950 font-extrabold text-xs rounded-xl shadow-md transition-all"
-              >
-                <Plus className="w-4 h-4" /> Share New Recipe
-              </button>
             </div>
+
+            {visibleRecipes.length === 0 && !loading ? (
+              <div className="bg-stone-900 border border-stone-800 rounded-3xl p-12 text-center space-y-3">
+                <BookOpen className="w-10 h-10 text-stone-600 mx-auto" />
+                <div className="text-sm font-bold text-stone-300">No brew guides matched your search or device filter.</div>
+                <button
+                  onClick={() => {
+                    setRecipeSearch('');
+                    setRecipeCategory('all');
+                    setSelectedMethod('');
+                  }}
+                  className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-stone-950 text-xs font-black transition-all"
+                >
+                  Show All Brew Guides
+                </button>
+              </div>
+            ) : null}
 
             {/* Recipes Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {recipes.map((recipe) => (
+              {visibleRecipes.map((recipe) => (
                 <div
                   key={recipe.id}
                   className="bg-stone-900 border border-stone-800 rounded-3xl p-6 flex flex-col justify-between hover:border-amber-500/50 transition-all group shadow-md"
@@ -915,7 +1087,8 @@ export default function Home() {
               ))}
             </div>
           </div>
-        )}
+          );
+        })()}
 
         {/* TAB 3: DYNAMIC BREW RATIO CALCULATOR & LIVE TIMER */}
         {activeTab === 'calculator' && (
@@ -933,12 +1106,34 @@ export default function Home() {
               </div>
 
               {/* Method Selector */}
-              <div>
-                <label className="text-xs font-bold text-stone-300 uppercase tracking-wider block mb-2">
+              <div className="space-y-3">
+                <label className="text-xs font-bold text-stone-300 uppercase tracking-wider block">
                   1. Brewing Device & Cafe Menu
                 </label>
-                <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-1">
-                  {BREW_METHOD_OPTIONS.map((m) => (
+
+                {/* Category Tabs (eliminates cramped scrollbar) */}
+                <div className="grid grid-cols-3 gap-1 bg-stone-950 p-1 rounded-xl border border-stone-800">
+                  {[
+                    { id: 'manual', label: 'Manual (8)' },
+                    { id: 'classic', label: 'Classics (5)' },
+                    { id: 'trending', label: '🔥 Trend (7)' },
+                  ].map((cat) => (
+                    <button
+                      key={cat.id}
+                      onClick={() => setCalcCategory(cat.id as 'manual' | 'classic' | 'trending')}
+                      className={`py-1.5 px-2 rounded-lg text-[11px] font-bold transition-all ${
+                        calcCategory === cat.id
+                          ? 'bg-amber-600 text-stone-950 font-black shadow-sm'
+                          : 'text-stone-400 hover:text-stone-200'
+                      }`}
+                    >
+                      {cat.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  {BREW_METHOD_OPTIONS.filter((m) => m.group === calcCategory).map((m) => (
                     <button
                       key={m.id}
                       onClick={() => {
@@ -946,13 +1141,14 @@ export default function Home() {
                         setCalcDose(m.dose);
                         setCalcRatio(m.ratio);
                       }}
-                      className={`p-3 rounded-xl border text-xs font-bold transition-all text-left ${
+                      className={`p-2.5 rounded-xl border text-xs font-bold transition-all text-left flex items-center justify-between gap-1.5 ${
                         calcMethod === m.id
                           ? 'bg-amber-600/20 border-amber-500 text-amber-400 font-extrabold shadow-sm'
-                          : 'bg-stone-950 border-stone-800 text-stone-400 hover:border-stone-700'
+                          : 'bg-stone-950 border-stone-800 text-stone-300 hover:border-stone-700 hover:bg-stone-800/60'
                       }`}
                     >
-                      {m.label}
+                      <span className="truncate">{m.label}</span>
+                      <span className="text-[10px] font-mono text-stone-500 shrink-0">1:{m.ratio}</span>
                     </button>
                   ))}
                 </div>
@@ -1244,7 +1440,7 @@ export default function Home() {
                           const bagSize = bean.bagSizeGrams || 250;
                           const totalBags = Math.floor(bean.stockGrams / bagSize);
                           return (
-                            <tr key={bean.id} className="hover:bg-stone-850/50 transition-colors">
+                            <tr key={bean.id} className="hover:bg-stone-800/50 transition-colors">
                               <td className="py-4 px-4 text-center">
                                 <span className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-stone-950 border border-stone-800 font-mono font-black text-amber-400 text-xs shadow-inner">
                                   #{index + 1}
@@ -1326,7 +1522,7 @@ export default function Home() {
                                     <button
                                       onClick={() => handleUpdateStock(bean.id, bean.stockGrams, -200)}
                                       title="Deduct 200g (Sample)"
-                                      className="px-2 py-1 bg-stone-850 hover:bg-stone-800 text-stone-400 hover:text-stone-200 border border-stone-800 rounded-lg text-[10px] font-bold transition-all"
+                                      className="px-2 py-1 bg-stone-800 hover:bg-stone-700 text-stone-300 hover:text-white border border-stone-700 rounded-lg text-[10px] font-bold transition-all"
                                     >
                                       -200g
                                     </button>
@@ -1364,6 +1560,28 @@ export default function Home() {
               </div>
             )}
           </div>
+        )}
+
+        {/* TAB 5: BEGINNER ACADEMY, GEAR & TASTING WHEEL */}
+        {activeTab === 'tutorial' && (
+          <CoffeeTutorialSection
+            onTryInCalculator={(method, dose, ratio) => {
+              const matched = BREW_METHOD_OPTIONS.find((m) => m.id === method);
+              if (matched) setCalcCategory(matched.group);
+              setCalcMethod(method);
+              setCalcDose(dose);
+              setCalcRatio(ratio);
+              setActiveTab('calculator');
+              showNotification(`Loaded ${formatBrewMethodLabel(method)} into Ratio Calculator!`);
+            }}
+            onExploreBeansByNote={(keyword) => {
+              setSelectedProcess('');
+              setSelectedRoast('');
+              setBeanSearch(keyword);
+              setActiveTab('beans');
+              showNotification(`Filtering Origins Catalog for "${keyword}" notes`);
+            }}
+          />
         )}
       </main>
 
@@ -1654,7 +1872,7 @@ export default function Home() {
                         updated[idx].startTimeSeconds = Number(e.target.value);
                         setNewRecipeSteps(updated);
                       }}
-                      className="w-16 bg-stone-900 border border-stone-750 px-1.5 py-1 rounded text-xs text-stone-200"
+                      className="w-16 bg-stone-900 border border-stone-700 px-1.5 py-1 rounded text-xs text-stone-200"
                     />
                     <input
                       type="number"
@@ -1665,7 +1883,7 @@ export default function Home() {
                         updated[idx].waterAmountMl = Number(e.target.value);
                         setNewRecipeSteps(updated);
                       }}
-                      className="w-16 bg-stone-900 border border-stone-750 px-1.5 py-1 rounded text-xs text-stone-200"
+                      className="w-16 bg-stone-900 border border-stone-700 px-1.5 py-1 rounded text-xs text-stone-200"
                     />
                     <input
                       type="text"
@@ -1676,7 +1894,7 @@ export default function Home() {
                         updated[idx].instruction = e.target.value;
                         setNewRecipeSteps(updated);
                       }}
-                      className="flex-1 bg-stone-900 border border-stone-750 px-2 py-1 rounded text-xs text-stone-200"
+                      className="flex-1 bg-stone-900 border border-stone-700 px-2 py-1 rounded text-xs text-stone-200"
                     />
                     {newRecipeSteps.length > 1 && (
                       <button
