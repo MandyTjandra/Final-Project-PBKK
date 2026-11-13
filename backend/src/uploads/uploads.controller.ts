@@ -3,7 +3,6 @@ import {
   Controller,
   HttpCode,
   HttpStatus,
-  PayloadTooLargeException,
   Post,
   UploadedFile,
   UseGuards,

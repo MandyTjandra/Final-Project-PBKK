@@ -78,7 +78,7 @@ export class RecipesService {
             )
           : null;
 
-      const { reviews, ...rest } = recipe;
+      const { reviews: _reviews, ...rest } = recipe;
       return {
         ...rest,
         averageRating: avgRating,

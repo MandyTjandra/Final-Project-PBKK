@@ -81,7 +81,7 @@ export class AuthService {
     const tokens = await this.generateTokens(user.id, user.email, user.role);
     await this.updateRefreshToken(user.id, tokens.refreshToken);
 
-    const { password, refreshToken: rt, ...safeUser } = user;
+    const { password: _password, refreshToken: _rt, ...safeUser } = user;
 
     return {
       user: safeUser,

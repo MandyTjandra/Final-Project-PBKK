@@ -31,4 +31,4 @@ async function bootstrap() {
   await app.listen(port);
   console.log(`🚀 BrewLab Backend running on: http://localhost:${port}/api`);
 }
-bootstrap();
+void bootstrap();

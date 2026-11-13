@@ -1,6 +1,9 @@
 import {
   BrewRecipe,
   CoffeeBean,
+  CreateBeanInput,
+  CreateRecipeInput,
+  PaginationMeta,
   RatioCalculationResult,
   Review,
   User,
@@ -79,7 +82,7 @@ export const api = {
     process?: string;
     page?: number;
     limit?: number;
-  }): Promise<{ data: CoffeeBean[]; meta: any }> {
+  }): Promise<{ data: CoffeeBean[]; meta: PaginationMeta }> {
     const query = new URLSearchParams();
     if (params?.search) query.append('search', params.search);
     if (params?.roastLevel) query.append('roastLevel', params.roastLevel);
@@ -98,7 +101,7 @@ export const api = {
     return res.json();
   },
 
-  async createBean(data: any): Promise<CoffeeBean> {
+  async createBean(data: CreateBeanInput): Promise<CoffeeBean> {
     const res = await fetch(`${API_BASE}/beans`, {
       method: 'POST',
       headers: {
@@ -145,7 +148,7 @@ export const api = {
     difficulty?: string;
     page?: number;
     limit?: number;
-  }): Promise<{ data: BrewRecipe[]; meta: any }> {
+  }): Promise<{ data: BrewRecipe[]; meta: PaginationMeta }> {
     const query = new URLSearchParams();
     if (params?.search) query.append('search', params.search);
     if (params?.method) query.append('method', params.method);
@@ -164,7 +167,7 @@ export const api = {
     return res.json();
   },
 
-  async createRecipe(data: any): Promise<BrewRecipe> {
+  async createRecipe(data: CreateRecipeInput): Promise<BrewRecipe> {
     const res = await fetch(`${API_BASE}/recipes`, {
       method: 'POST',
       headers: {

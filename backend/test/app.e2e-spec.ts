@@ -2,20 +2,17 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from './../src/app.module.js';
-import { PrismaService } from '../src/prisma/prisma.service.js';
 import { Role } from '../src/common/enums/role.enum.js';
 import { BrewMethod, Difficulty, ProcessMethod, RoastLevel } from '../src/common/enums/coffee.enum.js';
 
 describe('BrewLab Full E2E Integration Suite', () => {
   let app: INestApplication;
-  let prisma: PrismaService;
 
   let roasterToken: string;
   let roasterRefreshToken: string;
   let roasterId: string;
 
   let brewerToken: string;
-  let brewerId: string;
 
   let createdBeanId: string;
   let createdRecipeId: string;
@@ -37,7 +34,6 @@ describe('BrewLab Full E2E Integration Suite', () => {
     );
 
     await app.init();
-    prisma = app.get<PrismaService>(PrismaService);
   });
 
   afterAll(async () => {
@@ -82,7 +78,6 @@ describe('BrewLab Full E2E Integration Suite', () => {
         .expect(201);
 
       brewerToken = res.body.accessToken;
-      brewerId = res.body.user.id;
     });
 
     it('POST /api/auth/register - Duplicate email -> fail (409)', async () => {

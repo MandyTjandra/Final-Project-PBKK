@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import Image from 'next/image';
 import {
   Coffee,
   Scale,
@@ -9,9 +10,7 @@ import {
   Search,
   Filter,
   Flame,
-  Droplets,
   Clock,
-  Thermometer,
   Star,
   Plus,
   Trash2,
@@ -21,13 +20,9 @@ import {
   User as UserIcon,
   ChevronRight,
   LogOut,
-  Sparkles,
   Play,
   Pause,
   RotateCcw,
-  TrendingDown,
-  Layers,
-  ArrowUpRight,
   ShieldCheck,
   Award,
 } from 'lucide-react';
@@ -36,12 +31,15 @@ import {
   BrewMethod,
   BrewRecipe,
   CoffeeBean,
-  Difficulty,
   ProcessMethod,
   RatioCalculationResult,
   RoastLevel,
   User,
 } from '../types';
+
+function getErrorMessage(err: unknown, fallback: string): string {
+  return err instanceof Error && err.message ? err.message : fallback;
+}
 
 export default function Home() {
   // Navigation
@@ -67,7 +65,6 @@ export default function Home() {
   const [beanSearch, setBeanSearch] = useState('');
   const [selectedProcess, setSelectedProcess] = useState<string>('');
   const [selectedRoast, setSelectedRoast] = useState<string>('');
-  const [recipeSearch, setRecipeSearch] = useState('');
   const [selectedMethod, setSelectedMethod] = useState<string>('');
 
   // Calculator State
@@ -95,8 +92,6 @@ export default function Home() {
   const [newRecipeRatio, setNewRecipeRatio] = useState(15);
   const [newRecipeTemp, setNewRecipeTemp] = useState(92);
   const [newRecipeTime, setNewRecipeTime] = useState(180);
-  const [newRecipeDifficulty, setNewRecipeDifficulty] = useState<Difficulty>('BEGINNER');
-  const [newRecipeDesc, setNewRecipeDesc] = useState('');
   const [newRecipeSteps, setNewRecipeSteps] = useState<Array<{ startTimeSeconds: number; waterAmountMl: number; instruction: string }>>([
     { startTimeSeconds: 0, waterAmountMl: 45, instruction: 'Bloom 45g and gentle slurry swirl' },
     { startTimeSeconds: 45, waterAmountMl: 90, instruction: 'Second pour in steady concentric circles' },
@@ -110,31 +105,86 @@ export default function Home() {
   const [newBeanVarietal, setNewBeanVarietal] = useState('');
   const [newBeanProcess, setNewBeanProcess] = useState<ProcessMethod>('WASHED');
   const [newBeanRoast, setNewBeanRoast] = useState<RoastLevel>('LIGHT');
-  const [newBeanAltitude, setNewBeanAltitude] = useState(1600);
   const [newBeanStock, setNewBeanStock] = useState(2500);
   const [newBeanThreshold, setNewBeanThreshold] = useState(500);
   const [newBeanPrice, setNewBeanPrice] = useState(140000);
   const [newBeanNotes, setNewBeanNotes] = useState('Floral, Citrus, Peach');
-  const [newBeanDesc, setNewBeanDesc] = useState('');
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
 
-  // Initialize
+  const showNotification = (text: string, type: 'success' | 'error' = 'success') => {
+    setFeedbackMsg({ type, text });
+    setTimeout(() => setFeedbackMsg(null), 4000);
+  };
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [beansRes, recipesRes] = await Promise.all([
+        api.getBeans({
+          search: beanSearch,
+          process: selectedProcess || undefined,
+          roastLevel: selectedRoast || undefined,
+        }),
+        api.getRecipes({
+          method: selectedMethod || undefined,
+        }),
+      ]);
+      setBeans(beansRes.data);
+      setRecipes(recipesRes.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [beanSearch, selectedProcess, selectedRoast, selectedMethod]);
+
+  const calculateLiveRatio = useCallback(async () => {
+    try {
+      const result = await api.calculateRatio({
+        coffeeDoseGrams: calcDose,
+        targetRatio: calcRatio,
+        method: calcMethod,
+      });
+      setCalcResult(result);
+    } catch (err) {
+      console.error(err);
+    }
+  }, [calcDose, calcRatio, calcMethod]);
+
+  // Hydrate saved user on mount
   useEffect(() => {
     const savedUser = localStorage.getItem('brewlab_user');
-    if (savedUser) {
+    if (!savedUser) return;
+    let cancelled = false;
+    Promise.resolve().then(() => {
+      if (cancelled) return;
       try {
-        setCurrentUser(JSON.parse(savedUser));
-      } catch {}
-    }
-    loadData();
-    calculateLiveRatio();
+        setCurrentUser(JSON.parse(savedUser) as User);
+      } catch {
+        // Ignore invalid stored user JSON
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  // Load beans & recipes whenever filters or search change
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void loadData();
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [loadData]);
 
   // Recalculate ratio when parameters change
   useEffect(() => {
-    calculateLiveRatio();
-  }, [calcMethod, calcDose, calcRatio]);
+    const timer = setTimeout(() => {
+      void calculateLiveRatio();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [calculateLiveRatio]);
 
   // Timer effect
   useEffect(() => {
@@ -149,47 +199,6 @@ export default function Home() {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [isBrewing]);
-
-  const showNotification = (text: string, type: 'success' | 'error' = 'success') => {
-    setFeedbackMsg({ type, text });
-    setTimeout(() => setFeedbackMsg(null), 4000);
-  };
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const [beansRes, recipesRes] = await Promise.all([
-        api.getBeans({
-          search: beanSearch,
-          process: selectedProcess || undefined,
-          roastLevel: selectedRoast || undefined,
-        }),
-        api.getRecipes({
-          search: recipeSearch,
-          method: selectedMethod || undefined,
-        }),
-      ]);
-      setBeans(beansRes.data);
-      setRecipes(recipesRes.data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const calculateLiveRatio = async () => {
-    try {
-      const result = await api.calculateRatio({
-        coffeeDoseGrams: calcDose,
-        targetRatio: calcRatio,
-        method: calcMethod,
-      });
-      setCalcResult(result);
-    } catch (err) {
-      console.error(err);
-    }
-  };
 
   const handleQuickLogin = async (email: string, role: string) => {
     try {
@@ -229,8 +238,8 @@ export default function Home() {
       setAuthEmail('');
       setAuthPassword('');
       setAuthName('');
-    } catch (err: any) {
-      setAuthError(err.message || 'Authentication failed');
+    } catch (err: unknown) {
+      setAuthError(getErrorMessage(err, 'Authentication failed'));
     }
   };
 
@@ -248,8 +257,8 @@ export default function Home() {
       const res = await api.uploadImage(file);
       setUploadedImageUrl(`http://localhost:3001${res.url}`);
       showNotification('Image uploaded & saved to local storage!');
-    } catch (err: any) {
-      showNotification(err.message || 'File upload failed', 'error');
+    } catch (err: unknown) {
+      showNotification(getErrorMessage(err, 'File upload failed'), 'error');
     } finally {
       setIsUploading(false);
     }
@@ -264,19 +273,18 @@ export default function Home() {
         varietal: newBeanVarietal,
         process: newBeanProcess,
         roastLevel: newBeanRoast,
-        altitudeMasl: Number(newBeanAltitude),
+        altitudeMasl: 1600,
         stockGrams: Number(newBeanStock),
         minStockThreshold: Number(newBeanThreshold),
         price: Number(newBeanPrice),
         tastingNotes: newBeanNotes,
-        description: newBeanDesc,
         imageUrl: uploadedImageUrl || 'https://images.unsplash.com/photo-1587734195503-904fca47e0e9?w=600',
       });
       showNotification('Single-origin bean successfully cataloged!');
       setShowNewBeanModal(false);
-      loadData();
-    } catch (err: any) {
-      showNotification(err.message || 'Failed to create bean', 'error');
+      void loadData();
+    } catch (err: unknown) {
+      showNotification(getErrorMessage(err, 'Failed to create bean'), 'error');
     }
   };
 
@@ -285,9 +293,9 @@ export default function Home() {
     try {
       await api.updateBeanStock(beanId, newStock);
       showNotification(`Stock updated to ${newStock}g`);
-      loadData();
-    } catch (err: any) {
-      showNotification(err.message || 'Failed to update stock', 'error');
+      void loadData();
+    } catch (err: unknown) {
+      showNotification(getErrorMessage(err, 'Failed to update stock'), 'error');
     }
   };
 
@@ -309,8 +317,7 @@ export default function Home() {
         totalWaterMl: totalWater,
         waterTempCelsius: Number(newRecipeTemp),
         totalBrewTimeSeconds: Number(newRecipeTime),
-        difficulty: newRecipeDifficulty,
-        description: newRecipeDesc,
+        difficulty: 'BEGINNER',
         pourSteps: newRecipeSteps.map((s, idx) => ({
           stepOrder: idx + 1,
           startTimeSeconds: Number(s.startTimeSeconds),
@@ -321,9 +328,9 @@ export default function Home() {
 
       showNotification('Recipe and pour steps published!');
       setShowNewRecipeModal(false);
-      loadData();
-    } catch (err: any) {
-      showNotification(err.message || 'Failed to publish recipe', 'error');
+      void loadData();
+    } catch (err: unknown) {
+      showNotification(getErrorMessage(err, 'Failed to publish recipe'), 'error');
     }
   };
 
@@ -339,9 +346,9 @@ export default function Home() {
       setReviewComment('');
       const updated = await api.getRecipeById(selectedRecipe.id);
       setSelectedRecipe(updated);
-      loadData();
-    } catch (err: any) {
-      showNotification(err.message || 'Failed to submit review', 'error');
+      void loadData();
+    } catch (err: unknown) {
+      showNotification(getErrorMessage(err, 'Failed to submit review'), 'error');
     }
   };
 
@@ -508,9 +515,12 @@ export default function Home() {
                     {currentUser.role}
                   </div>
                 </div>
-                <img
+                <Image
                   src={currentUser.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'}
                   alt={currentUser.name}
+                  width={32}
+                  height={32}
+                  unoptimized
                   className="w-8 h-8 rounded-lg object-cover border border-stone-700"
                 />
                 <button
@@ -554,7 +564,12 @@ export default function Home() {
           </div>
 
           {/* Quick Stats Widget */}
-          <div className="grid grid-cols-3 gap-3 w-full md:w-auto">
+          <div className="grid grid-cols-3 gap-3 w-full md:w-auto relative">
+            {loading && (
+              <span className="col-span-3 text-right text-[11px] font-semibold text-amber-400 animate-pulse">
+                Syncing catalog...
+              </span>
+            )}
             <div className="bg-stone-900/90 border border-stone-800 p-4 rounded-2xl text-center shadow-lg">
               <div className="text-2xl font-black text-amber-400">{beans.length}</div>
               <div className="text-[11px] text-stone-400 mt-1">Origins Cataloged</div>
@@ -598,10 +613,7 @@ export default function Home() {
                 {['', 'WASHED', 'NATURAL', 'HONEY', 'ANAEROBIC', 'EXPERIMENTAL'].map((proc) => (
                   <button
                     key={proc}
-                    onClick={() => {
-                      setSelectedProcess(proc);
-                      setTimeout(loadData, 50);
-                    }}
+                    onClick={() => setSelectedProcess(proc)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                       selectedProcess === proc
                         ? 'bg-amber-600 text-stone-950'
@@ -621,10 +633,7 @@ export default function Home() {
                 {['', 'LIGHT', 'LIGHT_MEDIUM', 'MEDIUM', 'DARK'].map((roast) => (
                   <button
                     key={roast}
-                    onClick={() => {
-                      setSelectedRoast(roast);
-                      setTimeout(loadData, 50);
-                    }}
+                    onClick={() => setSelectedRoast(roast)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                       selectedRoast === roast
                         ? 'bg-amber-600 text-stone-950'
@@ -645,10 +654,13 @@ export default function Home() {
                   className="bg-stone-900 border border-stone-800 rounded-3xl overflow-hidden hover:border-amber-500/50 transition-all flex flex-col group shadow-md"
                 >
                   <div className="relative h-52 w-full overflow-hidden bg-stone-950">
-                    <img
+                    <Image
                       src={bean.imageUrl || 'https://images.unsplash.com/photo-1587734195503-904fca47e0e9?w=600'}
                       alt={bean.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      fill
+                      unoptimized
+                      sizes="(max-width: 768px) 100vw, 33vw"
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                     <div className="absolute top-3 left-3 flex gap-2">
                       <span className="px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider bg-stone-950/85 backdrop-blur-md text-amber-400 border border-amber-500/30">
@@ -759,10 +771,7 @@ export default function Home() {
                 ].map((m) => (
                   <button
                     key={m.id}
-                    onClick={() => {
-                      setSelectedMethod(m.id);
-                      setTimeout(loadData, 50);
-                    }}
+                    onClick={() => setSelectedMethod(m.id)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                       selectedMethod === m.id
                         ? 'bg-amber-600 text-stone-950 font-black shadow-md'
@@ -852,9 +861,12 @@ export default function Home() {
 
                   <div className="border-t border-stone-800 pt-4 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <img
+                      <Image
                         src={recipe.user?.avatarUrl || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100'}
                         alt="author"
+                        width={28}
+                        height={28}
+                        unoptimized
                         className="w-7 h-7 rounded-full object-cover border border-stone-700"
                       />
                       <span className="text-xs text-stone-300 font-semibold">{recipe.user?.name || 'Barista'}</span>
@@ -862,8 +874,12 @@ export default function Home() {
 
                     <button
                       onClick={async () => {
-                        const fullRecipe = await api.getRecipeById(recipe.id);
-                        setSelectedRecipe(fullRecipe);
+                        try {
+                          const fullRecipe = await api.getRecipeById(recipe.id);
+                          setSelectedRecipe(fullRecipe);
+                        } catch (err: unknown) {
+                          showNotification(getErrorMessage(err, 'Failed to load recipe details'), 'error');
+                        }
                       }}
                       className="flex items-center gap-1 text-xs font-bold text-amber-400 hover:text-amber-300 transition-colors"
                     >
@@ -1221,9 +1237,12 @@ export default function Home() {
                                 </span>
                               </td>
                               <td className="py-4 px-5 flex items-center gap-3">
-                                <img
+                                <Image
                                   src={bean.imageUrl || 'https://images.unsplash.com/photo-1587734195503-904fca47e0e9?w=100'}
                                   alt={bean.name}
+                                  width={44}
+                                  height={44}
+                                  unoptimized
                                   className="w-11 h-11 rounded-xl object-cover border border-stone-700 shadow-sm"
                                 />
                                 <div>

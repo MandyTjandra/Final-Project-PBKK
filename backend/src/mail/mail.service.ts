@@ -93,7 +93,7 @@ export class MailService {
 
   private async sendMail(to: string, subject: string, html: string): Promise<boolean> {
     try {
-      const info = await this.transporter.sendMail({
+      await this.transporter.sendMail({
         from: this.mailFrom,
         to,
         subject,

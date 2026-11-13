@@ -1,6 +1,5 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { BeansService } from './beans.service.js';
-import { ProcessMethod, RoastLevel } from '../common/enums/coffee.enum.js';
 import { Role } from '../common/enums/role.enum.js';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
 

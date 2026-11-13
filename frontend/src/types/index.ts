@@ -119,6 +119,47 @@ export interface BrewRecipe {
   };
 }
 
+export interface PaginationMeta {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface CreateBeanInput {
+  name: string;
+  origin: string;
+  farmOrStation?: string;
+  varietal: string;
+  process: ProcessMethod;
+  roastLevel: RoastLevel;
+  altitudeMasl?: number;
+  stockGrams: number;
+  minStockThreshold?: number;
+  price: number;
+  bagSizeGrams?: number;
+  imageUrl?: string;
+  tastingWheelUrl?: string;
+  description?: string;
+  tastingNotes: string;
+}
+
+export interface CreateRecipeInput {
+  coffeeBeanId?: string;
+  title: string;
+  method: BrewMethod;
+  grindSize: string;
+  coffeeDoseGrams: number;
+  targetRatio: number;
+  totalWaterMl: number;
+  waterTempCelsius: number;
+  totalBrewTimeSeconds: number;
+  difficulty?: Difficulty;
+  description?: string;
+  isPublic?: boolean;
+  pourSteps: Omit<PourStep, 'id'>[];
+}
+
 export interface RatioCalculationResult {
   coffeeDoseGrams: number;
   targetRatio: number;
