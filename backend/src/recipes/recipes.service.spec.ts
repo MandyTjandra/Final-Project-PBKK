@@ -131,5 +131,51 @@ describe('RecipesService (Unit Tests)', () => {
       expect(result.recommendedWaterTemp).toBe(85);
       expect(result.generatedPourSteps[0].waterAmountMl).toBe(144);
     });
+
+    it('should calculate Gula Aren Latte with palm sugar syrup, cold milk, and espresso', () => {
+      const result = service.calculateRatio({
+        coffeeDoseGrams: 18,
+        method: BrewMethod.GULA_AREN_LATTE,
+      });
+
+      expect(result.totalWaterMl).toBe(198); // 18 * 11
+      expect(result.recommendedWaterTemp).toBe(4);
+      expect(result.generatedPourSteps.length).toBe(3);
+      expect(result.generatedPourSteps[2].waterAmountMl).toBe(36);
+    });
+
+    it('should calculate Mont Blanc with chilled coffee base and cream cap', () => {
+      const result = service.calculateRatio({
+        coffeeDoseGrams: 18,
+        method: BrewMethod.MONT_BLANC,
+      });
+
+      expect(result.totalWaterMl).toBe(189); // 18 * 10.5
+      expect(result.recommendedWaterTemp).toBe(4);
+      expect(result.generatedPourSteps.length).toBe(3);
+    });
+
+    it('should calculate trending iced & hybrid methods (Espresso Tonic, Dirty, Spanish, Einspanner, Orange, Japanese V60, Switch, Origami)', () => {
+      const methods = [
+        BrewMethod.ESPRESSO_TONIC,
+        BrewMethod.DIRTY_LATTE,
+        BrewMethod.SPANISH_LATTE,
+        BrewMethod.EINSPANNER,
+        BrewMethod.ORANGE_ESPRESSO,
+        BrewMethod.JAPANESE_ICED_V60,
+        BrewMethod.V60_SWITCH,
+        BrewMethod.ORIGAMI_DRIPPER,
+      ];
+
+      for (const method of methods) {
+        const result = service.calculateRatio({
+          coffeeDoseGrams: 18,
+          method,
+        });
+        expect(result.method).toBe(method);
+        expect(result.totalWaterMl).toBeGreaterThan(0);
+        expect(result.generatedPourSteps.length).toBeGreaterThanOrEqual(2);
+      }
+    });
   });
 });

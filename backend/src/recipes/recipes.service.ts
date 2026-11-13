@@ -265,6 +265,16 @@ export class RecipesService {
       [BrewMethod.CAPPUCCINO]: 8.5,
       [BrewMethod.FLAT_WHITE]: 8.0,
       [BrewMethod.AMERICANO]: 10.0,
+      [BrewMethod.GULA_AREN_LATTE]: 11.0,
+      [BrewMethod.MONT_BLANC]: 10.5,
+      [BrewMethod.ESPRESSO_TONIC]: 10.0,
+      [BrewMethod.DIRTY_LATTE]: 9.5,
+      [BrewMethod.SPANISH_LATTE]: 11.5,
+      [BrewMethod.EINSPANNER]: 9.0,
+      [BrewMethod.ORANGE_ESPRESSO]: 10.0,
+      [BrewMethod.JAPANESE_ICED_V60]: 15.0,
+      [BrewMethod.V60_SWITCH]: 15.5,
+      [BrewMethod.ORIGAMI_DRIPPER]: 15.5,
     };
 
     const ratio = dto.targetRatio || defaultRatios[dto.method] || 15.0;
@@ -535,6 +545,270 @@ export class RecipesService {
             startTimeSeconds: 0,
             waterAmountMl: totalWater,
             instruction: `Distribute grinds with WDT tool, tamp level at 15kg pressure, extract 1:2 ratio (${dose}g in -> ${totalWater}g out) in 28-30s.`,
+          },
+        ];
+        break;
+      }
+
+      case BrewMethod.GULA_AREN_LATTE: {
+        recommendedWaterTemp = 4; // Chilled iced signature
+        estimatedBrewTimeSeconds = 45;
+        const espressoYield = Math.min(Math.round(dose * 2.0), totalWater);
+        const arenSyrup = Math.round(totalWater * 0.13);
+        const coldMilk = Math.max(0, totalWater - espressoYield - arenSyrup);
+        generatedSteps = [
+          {
+            stepOrder: 1,
+            startTimeSeconds: 0,
+            waterAmountMl: arenSyrup,
+            instruction: `Pour ${arenSyrup}g organic liquid Gula Aren syrup into iced glass and fill with crystal ice cubes.`,
+          },
+          {
+            stepOrder: 2,
+            startTimeSeconds: 10,
+            waterAmountMl: coldMilk,
+            instruction: `Add ${coldMilk}ml chilled fresh milk (or oat milk) gently over the ice.`,
+          },
+          {
+            stepOrder: 3,
+            startTimeSeconds: 20,
+            waterAmountMl: espressoYield,
+            instruction: `Extract ${espressoYield}g bold double espresso and float on top for signature Indonesian Kopi Susu Gula Aren layering.`,
+          },
+        ];
+        break;
+      }
+
+      case BrewMethod.MONT_BLANC: {
+        recommendedWaterTemp = 4; // Iced signature with whipped cream cap
+        estimatedBrewTimeSeconds = 60;
+        const coffeeBase = Math.round(totalWater * 0.68);
+        const creamCap = Math.max(0, totalWater - coffeeBase);
+        generatedSteps = [
+          {
+            stepOrder: 1,
+            startTimeSeconds: 0,
+            waterAmountMl: coffeeBase,
+            instruction: `Combine ${coffeeBase}ml chilled double espresso & cold filtered water over clear ice with 10ml vanilla/maple syrup.`,
+          },
+          {
+            stepOrder: 2,
+            startTimeSeconds: 30,
+            waterAmountMl: creamCap,
+            instruction: `Float ${creamCap}g lightly whipped heavy cream foam on top using the back of a spoon.`,
+          },
+          {
+            stepOrder: 3,
+            startTimeSeconds: 50,
+            waterAmountMl: 0,
+            instruction: `Grate fresh orange zest and nutmeg directly over the snow-white cream cap to finish the Mont Blanc.`,
+          },
+        ];
+        break;
+      }
+
+      case BrewMethod.ESPRESSO_TONIC: {
+        recommendedWaterTemp = 5;
+        estimatedBrewTimeSeconds = 45;
+        const espressoYield = Math.min(Math.round(dose * 2.0), totalWater);
+        const tonicWater = Math.max(0, totalWater - espressoYield);
+        generatedSteps = [
+          {
+            stepOrder: 1,
+            startTimeSeconds: 0,
+            waterAmountMl: tonicWater,
+            instruction: `Fill highball glass with ice, add citrus peel & rosemary sprig, then pour ${tonicWater}ml chilled botanical tonic water.`,
+          },
+          {
+            stepOrder: 2,
+            startTimeSeconds: 15,
+            waterAmountMl: espressoYield,
+            instruction: `Slowly pour ${espressoYield}g bright fruity espresso over a spoon to prevent foaming and keep crisp layers.`,
+          },
+        ];
+        break;
+      }
+
+      case BrewMethod.DIRTY_LATTE: {
+        recommendedWaterTemp = 4;
+        estimatedBrewTimeSeconds = 40;
+        const ristrettoYield = Math.min(Math.round(dose * 1.8), totalWater);
+        const chilledMilk = Math.max(0, totalWater - ristrettoYield);
+        generatedSteps = [
+          {
+            stepOrder: 1,
+            startTimeSeconds: 0,
+            waterAmountMl: chilledMilk,
+            instruction: `Pour ${chilledMilk}ml extra-chilled creamy milk (4°C) into a freezer-frosted glass (no ice).`,
+          },
+          {
+            stepOrder: 2,
+            startTimeSeconds: 15,
+            waterAmountMl: ristrettoYield,
+            instruction: `Pull ${ristrettoYield}g hot double ristretto directly over the cold milk surface so espresso cascades downward.`,
+          },
+        ];
+        break;
+      }
+
+      case BrewMethod.SPANISH_LATTE: {
+        recommendedWaterTemp = 5;
+        estimatedBrewTimeSeconds = 50;
+        const condensedMilk = Math.round(totalWater * 0.14);
+        const espressoYield = Math.min(Math.round(dose * 2.0), Math.max(0, totalWater - condensedMilk));
+        const coldMilk = Math.max(0, totalWater - condensedMilk - espressoYield);
+        generatedSteps = [
+          {
+            stepOrder: 1,
+            startTimeSeconds: 0,
+            waterAmountMl: condensedMilk + espressoYield,
+            instruction: `Dissolve ${condensedMilk}g sweetened condensed milk with ${espressoYield}g hot double espresso and stir until silky.`,
+          },
+          {
+            stepOrder: 2,
+            startTimeSeconds: 30,
+            waterAmountMl: coldMilk,
+            instruction: `Add ice cubes and top up with ${coldMilk}ml cold whole milk; finish with a light dusting of cinnamon.`,
+          },
+        ];
+        break;
+      }
+
+      case BrewMethod.EINSPANNER: {
+        recommendedWaterTemp = 60;
+        estimatedBrewTimeSeconds = 55;
+        const coffeeBase = Math.round(totalWater * 0.65);
+        const creamCap = Math.max(0, totalWater - coffeeBase);
+        generatedSteps = [
+          {
+            stepOrder: 1,
+            startTimeSeconds: 0,
+            waterAmountMl: coffeeBase,
+            instruction: `Prepare ${coffeeBase}ml rich espresso + hot water base in a pre-warmed fluted glass.`,
+          },
+          {
+            stepOrder: 2,
+            startTimeSeconds: 35,
+            waterAmountMl: creamCap,
+            instruction: `Layer ${creamCap}g cold, softly whipped sweet cream gently over the coffee without stirring.`,
+          },
+        ];
+        break;
+      }
+
+      case BrewMethod.ORANGE_ESPRESSO: {
+        recommendedWaterTemp = 6;
+        estimatedBrewTimeSeconds = 45;
+        const espressoYield = Math.min(Math.round(dose * 2.0), totalWater);
+        const orangeJuice = Math.max(0, totalWater - espressoYield);
+        generatedSteps = [
+          {
+            stepOrder: 1,
+            startTimeSeconds: 0,
+            waterAmountMl: orangeJuice,
+            instruction: `Fill glass with clear ice and pour ${orangeJuice}ml fresh cold-pressed Valencia orange juice.`,
+          },
+          {
+            stepOrder: 2,
+            startTimeSeconds: 15,
+            waterAmountMl: espressoYield,
+            instruction: `Float ${espressoYield}g bright double espresso slowly onto the juice to create crisp golden-amber layers.`,
+          },
+        ];
+        break;
+      }
+
+      case BrewMethod.JAPANESE_ICED_V60: {
+        recommendedWaterTemp = 93;
+        estimatedBrewTimeSeconds = 165;
+        const iceWeight = Math.round(totalWater * 0.4);
+        const hotWater = Math.max(0, totalWater - iceWeight);
+        const bloom = Math.min(Math.round(dose * 2.5), hotWater);
+        const pour2 = Math.round((hotWater - bloom) * 0.5);
+        const pour3 = Math.max(0, hotWater - bloom - pour2);
+        generatedSteps = [
+          {
+            stepOrder: 1,
+            startTimeSeconds: 0,
+            waterAmountMl: iceWeight + bloom,
+            instruction: `Place ${iceWeight}g ice in server. Bloom coffee bed with ${bloom}g hot water (93°C) and swirl gently.`,
+          },
+          {
+            stepOrder: 2,
+            startTimeSeconds: 40,
+            waterAmountMl: pour2,
+            instruction: `Pour ${pour2}g hot water in slow concentric spirals to keep slurry lively.`,
+          },
+          {
+            stepOrder: 3,
+            startTimeSeconds: 85,
+            waterAmountMl: pour3,
+            instruction: `Pour final ${pour3}g hot water. Swirl iced carafe once drawdown completes to flash-chill aromatics.`,
+          },
+        ];
+        break;
+      }
+
+      case BrewMethod.V60_SWITCH: {
+        recommendedWaterTemp = 92;
+        estimatedBrewTimeSeconds = 180;
+        const bloom = Math.min(Math.round(dose * 3.0), totalWater);
+        const steepWater = Math.max(0, totalWater - bloom);
+        generatedSteps = [
+          {
+            stepOrder: 1,
+            startTimeSeconds: 0,
+            waterAmountMl: bloom,
+            instruction: `Switch valve OPEN: bloom with ${bloom}g water at 92°C and swirl for 35s.`,
+          },
+          {
+            stepOrder: 2,
+            startTimeSeconds: 40,
+            waterAmountMl: steepWater,
+            instruction: `Close Switch valve: pour ${steepWater}g water and let coffee steep by immersion until 1:45.`,
+          },
+          {
+            stepOrder: 3,
+            startTimeSeconds: 105,
+            waterAmountMl: 0,
+            instruction: `Flip Switch valve OPEN at 1:45 and allow smooth, syrupy drawdown to finish by 3:00.`,
+          },
+        ];
+        break;
+      }
+
+      case BrewMethod.ORIGAMI_DRIPPER: {
+        recommendedWaterTemp = 93;
+        estimatedBrewTimeSeconds = 150;
+        const bloom = Math.min(Math.round(dose * 2.5), totalWater);
+        const remaining = Math.max(0, totalWater - bloom);
+        const pour2 = Math.round(remaining * 0.35);
+        const pour3 = Math.round(remaining * 0.35);
+        const pour4 = Math.max(0, remaining - pour2 - pour3);
+        generatedSteps = [
+          {
+            stepOrder: 1,
+            startTimeSeconds: 0,
+            waterAmountMl: bloom,
+            instruction: `Bloom ${bloom}g in Origami with conical paper filter for crisp bypass-free saturation.`,
+          },
+          {
+            stepOrder: 2,
+            startTimeSeconds: 35,
+            waterAmountMl: pour2,
+            instruction: `Second pour ${pour2}g steady center stream to boost sweetness.`,
+          },
+          {
+            stepOrder: 3,
+            startTimeSeconds: 70,
+            waterAmountMl: pour3,
+            instruction: `Third pour ${pour3}g in fast concentric circles.`,
+          },
+          {
+            stepOrder: 4,
+            startTimeSeconds: 105,
+            waterAmountMl: pour4,
+            instruction: `Final pour ${pour4}g and let ribbed channels drain cleanly by 2:30.`,
           },
         ];
         break;

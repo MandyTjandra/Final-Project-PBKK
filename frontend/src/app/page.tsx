@@ -41,6 +41,51 @@ function getErrorMessage(err: unknown, fallback: string): string {
   return err instanceof Error && err.message ? err.message : fallback;
 }
 
+const BREW_METHOD_OPTIONS: Array<{
+  id: BrewMethod;
+  label: string;
+  dose: number;
+  ratio: number;
+  group: 'manual' | 'classic' | 'trending';
+}> = [
+  { id: 'V60', label: 'Hario V60', dose: 15, ratio: 15, group: 'manual' },
+  { id: 'AEROPRESS', label: 'AeroPress', dose: 18, ratio: 11, group: 'manual' },
+  { id: 'KALITA_WAVE', label: 'Kalita Wave', dose: 15, ratio: 15, group: 'manual' },
+  { id: 'FRENCH_PRESS', label: 'French Press', dose: 30, ratio: 16.5, group: 'manual' },
+  { id: 'COLD_BREW', label: 'Cold Brew', dose: 60, ratio: 8, group: 'manual' },
+  { id: 'JAPANESE_ICED_V60', label: '🧊 Japanese Iced V60', dose: 20, ratio: 15, group: 'manual' },
+  { id: 'V60_SWITCH', label: 'Hario Switch', dose: 16, ratio: 15.5, group: 'manual' },
+  { id: 'ORIGAMI_DRIPPER', label: 'Origami Dripper', dose: 15, ratio: 15.5, group: 'manual' },
+  { id: 'CAFE_LATTE', label: '☕ Caffè Latte', dose: 18, ratio: 12, group: 'classic' },
+  { id: 'CAPPUCCINO', label: '☕ Cappuccino', dose: 18, ratio: 8.5, group: 'classic' },
+  { id: 'FLAT_WHITE', label: '☕ Flat White', dose: 19, ratio: 8, group: 'classic' },
+  { id: 'AMERICANO', label: '☕ Americano', dose: 18, ratio: 10, group: 'classic' },
+  { id: 'ESPRESSO', label: '☕ Double Espresso', dose: 18, ratio: 2, group: 'classic' },
+  { id: 'GULA_AREN_LATTE', label: '🧊 Gula Aren Latte', dose: 18, ratio: 11, group: 'trending' },
+  { id: 'MONT_BLANC', label: '🏔️ Mont Blanc', dose: 18, ratio: 10.5, group: 'trending' },
+  { id: 'ESPRESSO_TONIC', label: '🍋 Espresso Tonic', dose: 18, ratio: 10, group: 'trending' },
+  { id: 'DIRTY_LATTE', label: '🥛 Dirty Latte', dose: 19, ratio: 9.5, group: 'trending' },
+  { id: 'SPANISH_LATTE', label: '🧊 Spanish Latte', dose: 18, ratio: 11.5, group: 'trending' },
+  { id: 'EINSPANNER', label: '🍦 Einspänner', dose: 18, ratio: 9, group: 'trending' },
+  { id: 'ORANGE_ESPRESSO', label: '🍊 Orange Espresso', dose: 18, ratio: 10, group: 'trending' },
+];
+
+const BREW_METHOD_LABELS = Object.fromEntries(
+  BREW_METHOD_OPTIONS.map((m) => [m.id, m.label]),
+) as Record<BrewMethod, string>;
+
+function formatBrewMethodLabel(method: BrewMethod): string {
+  return BREW_METHOD_LABELS[method] ?? method.replace(/_/g, ' ');
+}
+
+function formatDurationShort(seconds: number): string {
+  if (seconds >= 3600) return `${Math.round(seconds / 3600)}h`;
+  if (seconds < 60) return `${seconds}s`;
+  const mins = Math.floor(seconds / 60);
+  const rem = seconds % 60;
+  return rem === 0 ? `${mins}m` : `${mins}m ${rem}s`;
+}
+
 export default function Home() {
   // Navigation
   const [activeTab, setActiveTab] = useState<'beans' | 'recipes' | 'calculator' | 'roastery'>('beans');
@@ -125,9 +170,11 @@ export default function Home() {
           search: beanSearch,
           process: selectedProcess || undefined,
           roastLevel: selectedRoast || undefined,
+          limit: 50,
         }),
         api.getRecipes({
           method: selectedMethod || undefined,
+          limit: 50,
         }),
       ]);
       setBeans(beansRes.data);
@@ -756,19 +803,7 @@ export default function Home() {
                 <span className="text-xs text-stone-400 font-bold flex items-center gap-1 mr-1">
                   Device:
                 </span>
-                {[
-                  { id: '', label: 'All Devices' },
-                  { id: 'V60', label: 'Hario V60' },
-                  { id: 'AEROPRESS', label: 'AeroPress' },
-                  { id: 'KALITA_WAVE', label: 'Kalita Wave' },
-                  { id: 'FRENCH_PRESS', label: 'French Press' },
-                  { id: 'COLD_BREW', label: 'Cold Brew' },
-                  { id: 'CAFE_LATTE', label: '☕ Caffè Latte' },
-                  { id: 'CAPPUCCINO', label: '☕ Cappuccino' },
-                  { id: 'FLAT_WHITE', label: '☕ Flat White' },
-                  { id: 'AMERICANO', label: '☕ Americano' },
-                  { id: 'ESPRESSO', label: '☕ Espresso' },
-                ].map((m) => (
+                {[{ id: '', label: 'All Devices' }, ...BREW_METHOD_OPTIONS].map((m) => (
                   <button
                     key={m.id}
                     onClick={() => setSelectedMethod(m.id)}
@@ -808,17 +843,7 @@ export default function Home() {
                   <div>
                     <div className="flex items-center justify-between mb-3">
                       <span className="px-3 py-1 rounded-md text-xs font-extrabold bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                        {recipe.method === 'CAFE_LATTE'
-                          ? '☕ Caffè Latte'
-                          : recipe.method === 'CAPPUCCINO'
-                          ? '☕ Cappuccino'
-                          : recipe.method === 'FLAT_WHITE'
-                          ? '☕ Flat White'
-                          : recipe.method === 'AMERICANO'
-                          ? '☕ Americano'
-                          : recipe.method === 'ESPRESSO'
-                          ? '☕ Espresso'
-                          : recipe.method.replace('_', ' ')}
+                        {formatBrewMethodLabel(recipe.method)}
                       </span>
                       <div className="flex items-center gap-1 text-amber-400 text-xs font-bold">
                         <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
@@ -912,23 +937,12 @@ export default function Home() {
                 <label className="text-xs font-bold text-stone-300 uppercase tracking-wider block mb-2">
                   1. Brewing Device & Cafe Menu
                 </label>
-                <div className="grid grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
-                  {[
-                    { id: 'V60', label: 'Hario V60', dose: 15, ratio: 15 },
-                    { id: 'AEROPRESS', label: 'AeroPress', dose: 18, ratio: 11 },
-                    { id: 'KALITA_WAVE', label: 'Kalita Wave', dose: 15, ratio: 15 },
-                    { id: 'FRENCH_PRESS', label: 'French Press', dose: 30, ratio: 16.6 },
-                    { id: 'COLD_BREW', label: 'Cold Brew', dose: 60, ratio: 8 },
-                    { id: 'CAFE_LATTE', label: '☕ Caffè Latte', dose: 18, ratio: 12 },
-                    { id: 'CAPPUCCINO', label: '☕ Cappuccino', dose: 18, ratio: 8.5 },
-                    { id: 'FLAT_WHITE', label: '☕ Flat White', dose: 19, ratio: 8 },
-                    { id: 'AMERICANO', label: '☕ Americano', dose: 18, ratio: 10 },
-                    { id: 'ESPRESSO', label: '☕ Double Espresso', dose: 18, ratio: 2 },
-                  ].map((m) => (
+                <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-1">
+                  {BREW_METHOD_OPTIONS.map((m) => (
                     <button
                       key={m.id}
                       onClick={() => {
-                        setCalcMethod(m.id as BrewMethod);
+                        setCalcMethod(m.id);
                         setCalcDose(m.dose);
                         setCalcRatio(m.ratio);
                       }}
@@ -986,7 +1000,7 @@ export default function Home() {
                 </div>
                 <input
                   type="range"
-                  min="8"
+                  min="2"
                   max="20"
                   step="0.5"
                   value={calcRatio}
@@ -1013,7 +1027,7 @@ export default function Home() {
                   <div className="text-[10px] text-stone-500 uppercase font-semibold">Target Time</div>
                   <div className="text-xl font-black text-stone-200">
                     {calcResult?.estimatedBrewTimeSeconds
-                      ? `${Math.floor(calcResult.estimatedBrewTimeSeconds / 60)}m`
+                      ? formatDurationShort(calcResult.estimatedBrewTimeSeconds)
                       : '3m'}
                   </div>
                 </div>
@@ -1360,17 +1374,7 @@ export default function Home() {
             <div className="flex items-start justify-between border-b border-stone-800 pb-4">
               <div>
                 <span className="px-3 py-1 rounded-md text-xs font-black bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase tracking-wider">
-                  {selectedRecipe.method === 'CAFE_LATTE'
-                    ? '☕ Caffè Latte'
-                    : selectedRecipe.method === 'CAPPUCCINO'
-                    ? '☕ Cappuccino'
-                    : selectedRecipe.method === 'FLAT_WHITE'
-                    ? '☕ Flat White'
-                    : selectedRecipe.method === 'AMERICANO'
-                    ? '☕ Americano'
-                    : selectedRecipe.method === 'ESPRESSO'
-                    ? '☕ Espresso'
-                    : selectedRecipe.method.replace('_', ' ')}
+                  {formatBrewMethodLabel(selectedRecipe.method)}
                 </span>
                 <h2 className="text-2xl font-black text-white mt-2 leading-tight">{selectedRecipe.title}</h2>
                 <div className="text-xs text-stone-400 mt-1 flex items-center gap-2">
@@ -1537,18 +1541,25 @@ export default function Home() {
                   className="w-full bg-stone-950 border border-stone-800 px-3 py-2 rounded-xl text-xs text-stone-200"
                 >
                   <optgroup label="Manual Brew & Filter">
-                    <option value="V60">Hario V60</option>
-                    <option value="AEROPRESS">AeroPress</option>
-                    <option value="KALITA_WAVE">Kalita Wave</option>
-                    <option value="FRENCH_PRESS">French Press</option>
-                    <option value="COLD_BREW">Cold Brew</option>
+                    {BREW_METHOD_OPTIONS.filter((m) => m.group === 'manual').map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.label}
+                      </option>
+                    ))}
                   </optgroup>
                   <optgroup label="Espresso & Cafe Classics">
-                    <option value="CAFE_LATTE">☕ Caffè Latte (Espresso + Microfoam)</option>
-                    <option value="CAPPUCCINO">☕ Cappuccino (Espresso + Foam Pillow)</option>
-                    <option value="FLAT_WHITE">☕ Flat White (Double Ristretto + Thin Foam)</option>
-                    <option value="AMERICANO">☕ Americano / Long Black</option>
-                    <option value="ESPRESSO">☕ Double Espresso</option>
+                    {BREW_METHOD_OPTIONS.filter((m) => m.group === 'classic').map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Trending Signature Menus">
+                    {BREW_METHOD_OPTIONS.filter((m) => m.group === 'trending').map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.label}
+                      </option>
+                    ))}
                   </optgroup>
                 </select>
               </div>

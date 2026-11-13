@@ -19,7 +19,17 @@ export type BrewMethod =
   | 'CAFE_LATTE'
   | 'CAPPUCCINO'
   | 'FLAT_WHITE'
-  | 'AMERICANO';
+  | 'AMERICANO'
+  | 'GULA_AREN_LATTE'
+  | 'MONT_BLANC'
+  | 'ESPRESSO_TONIC'
+  | 'DIRTY_LATTE'
+  | 'SPANISH_LATTE'
+  | 'EINSPANNER'
+  | 'ORANGE_ESPRESSO'
+  | 'JAPANESE_ICED_V60'
+  | 'V60_SWITCH'
+  | 'ORIGAMI_DRIPPER';
 
 export type Difficulty = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
 
