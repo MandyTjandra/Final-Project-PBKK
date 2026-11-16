@@ -29,6 +29,7 @@ import {
   Sparkles,
   ChevronLeft,
   Droplets,
+  X,
 } from 'lucide-react';
 import { api } from '../lib/api';
 import CoffeeTutorialSection from '../components/CoffeeTutorialSection';
@@ -300,6 +301,29 @@ export default function Home() {
     };
   }, [isBrewing]);
 
+  // Close open modals with Escape key & lock background scroll when a modal is open
+  const isAnyModalOpen = Boolean(selectedRecipe || showNewRecipeModal || showNewBeanModal || showAuthModal);
+  useEffect(() => {
+    if (!isAnyModalOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (showAuthModal) setShowAuthModal(false);
+      else if (showNewBeanModal) setShowNewBeanModal(false);
+      else if (showNewRecipeModal) setShowNewRecipeModal(false);
+      else if (selectedRecipe) setSelectedRecipe(null);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isAnyModalOpen, selectedRecipe, showNewRecipeModal, showNewBeanModal, showAuthModal]);
+
   const handleQuickLogin = async (email: string, role: string) => {
     try {
       const res = await api.login({ email, password: 'password123' });
@@ -482,7 +506,7 @@ export default function Home() {
       {/* Toast Notification */}
       {feedbackMsg && (
         <div
-          className={`fixed bottom-6 right-6 z-50 px-5 py-3 rounded-xl shadow-2xl border backdrop-blur-md flex items-center gap-3 animate-card-in ${
+          className={`fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 sm:max-w-sm z-50 px-4 py-3 rounded-xl shadow-2xl border backdrop-blur-md flex items-center gap-3 animate-card-in ${
             feedbackMsg.type === 'success'
               ? 'bg-emerald-950/90 border-emerald-700/80 text-emerald-200'
               : 'bg-rose-950/90 border-rose-700/80 text-rose-200'
@@ -553,17 +577,17 @@ export default function Home() {
 
       {/* Main Navigation Header */}
       <header className="bg-[#0d0b09]/85 border-b border-stone-800/70 sticky top-0 z-40 backdrop-blur-xl">
-        <div className="max-w-[1640px] mx-auto px-4 sm:px-6 lg:px-10 py-3.5 flex flex-wrap xl:flex-nowrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5 cursor-pointer shrink-0 group" onClick={() => setActiveTab('beans')}>
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#e2a856] via-[#c78535] to-[#8a5318] flex items-center justify-center shadow-lg shadow-amber-950/50 border border-amber-300/20 group-hover:scale-105 transition-transform duration-300">
-              <Coffee className="w-5 h-5 text-stone-950 stroke-[2.2]" />
+        <div className="max-w-[1640px] mx-auto px-3 sm:px-6 lg:px-10 py-2.5 sm:py-3.5 flex flex-wrap xl:flex-nowrap items-center justify-between gap-2.5 sm:gap-4">
+          <div className="flex items-center gap-2.5 sm:gap-3.5 cursor-pointer shrink-0 group" onClick={() => setActiveTab('beans')}>
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-[#e2a856] via-[#c78535] to-[#8a5318] flex items-center justify-center shadow-lg shadow-amber-950/50 border border-amber-300/20 group-hover:scale-105 transition-transform duration-300">
+              <Coffee className="w-4 h-4 sm:w-5 sm:h-5 text-stone-950 stroke-[2.2]" />
             </div>
             <div>
-              <div className="flex items-baseline gap-2">
-                <span className="font-serif text-2xl font-semibold tracking-tight text-stone-50 leading-none">
+              <div className="flex items-baseline gap-1.5 sm:gap-2">
+                <span className="font-serif text-xl sm:text-2xl font-semibold tracking-tight text-stone-50 leading-none">
                   BrewLab
                 </span>
-                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-amber-400/90 font-semibold">
+                <span className="font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.2em] text-amber-400/90 font-semibold">
                   Atelier
                 </span>
               </div>
@@ -573,11 +597,11 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Navigation Tabs (Responsive, zero horizontal scrollbar) */}
-          <nav className="order-3 xl:order-2 w-full xl:w-auto flex flex-wrap xl:flex-nowrap items-center justify-center gap-1 bg-stone-950/90 p-1 rounded-xl border border-stone-800/80 shadow-inner">
+          {/* Navigation Tabs (Single-row horizontally scrollable on mobile, centered on desktop) */}
+          <nav className="order-3 xl:order-2 w-full xl:w-auto flex items-center justify-start sm:justify-center gap-1 bg-stone-950/90 p-1 rounded-xl border border-stone-800/80 shadow-inner overflow-x-auto no-scrollbar">
             <button
               onClick={() => setActiveTab('beans')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200 ${
+              className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200 ${
                 activeTab === 'beans'
                   ? 'bg-stone-800/95 text-amber-300 border border-stone-700/80 shadow-sm'
                   : 'text-stone-400 hover:text-stone-100 hover:bg-stone-900/60'
@@ -589,7 +613,7 @@ export default function Home() {
             </button>
             <button
               onClick={() => setActiveTab('recipes')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200 ${
+              className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200 ${
                 activeTab === 'recipes'
                   ? 'bg-stone-800/95 text-amber-300 border border-stone-700/80 shadow-sm'
                   : 'text-stone-400 hover:text-stone-100 hover:bg-stone-900/60'
@@ -601,7 +625,7 @@ export default function Home() {
             </button>
             <button
               onClick={() => setActiveTab('calculator')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200 ${
+              className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200 ${
                 activeTab === 'calculator'
                   ? 'bg-stone-800/95 text-amber-300 border border-stone-700/80 shadow-sm'
                   : 'text-stone-400 hover:text-stone-100 hover:bg-stone-900/60'
@@ -612,7 +636,7 @@ export default function Home() {
             </button>
             <button
               onClick={() => setActiveTab('tutorial')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200 ${
+              className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200 ${
                 activeTab === 'tutorial'
                   ? 'bg-stone-800/95 text-amber-300 border border-stone-700/80 shadow-sm'
                   : 'text-stone-400 hover:text-stone-100 hover:bg-stone-900/60'
@@ -623,7 +647,7 @@ export default function Home() {
             </button>
             <button
               onClick={() => setActiveTab('roastery')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200 ${
+              className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200 ${
                 activeTab === 'roastery'
                   ? 'bg-stone-800/95 text-amber-300 border border-stone-700/80 shadow-sm'
                   : 'text-stone-400 hover:text-stone-100 hover:bg-stone-900/60'
@@ -641,14 +665,14 @@ export default function Home() {
           </nav>
 
           {/* User Account / Auth Button - Always Pinned Top Right */}
-          <div className="order-2 xl:order-3 ml-auto xl:ml-0 flex items-center gap-3 shrink-0">
+          <div className="order-2 xl:order-3 ml-auto xl:ml-0 flex items-center gap-2 sm:gap-3 shrink-0">
             {currentUser ? (
-              <div className="flex items-center gap-3 bg-stone-900/90 pl-3.5 pr-2 py-1.5 rounded-xl border border-stone-800 hover:border-stone-700 transition-colors">
-                <div className="text-right">
-                  <div className="text-xs font-semibold text-stone-100">{currentUser.name}</div>
+              <div className="flex items-center gap-2 sm:gap-3 bg-stone-900/90 pl-2.5 sm:pl-3.5 pr-1.5 sm:pr-2 py-1 sm:py-1.5 rounded-xl border border-stone-800 hover:border-stone-700 transition-colors">
+                <div className="text-right max-w-[100px] sm:max-w-[160px]">
+                  <div className="text-xs font-semibold text-stone-100 truncate">{currentUser.name}</div>
                   <div className="text-[10px] font-mono uppercase tracking-widest text-amber-400/90 flex items-center justify-end gap-1">
-                    <ShieldCheck className="w-3 h-3 text-amber-400" />
-                    {currentUser.role}
+                    <ShieldCheck className="w-3 h-3 text-amber-400 shrink-0" />
+                    <span className="truncate">{currentUser.role}</span>
                   </div>
                 </div>
                 <Image
@@ -700,7 +724,7 @@ export default function Home() {
               <span>CURATED SINGLE-ORIGIN ARCHIVE · ROASTERY LAB</span>
             </div>
 
-            <h1 className="text-4xl sm:text-5xl xl:text-6xl font-bold tracking-tight text-stone-50 leading-[1.06]">
+            <h1 className="text-3xl sm:text-5xl xl:text-6xl font-bold tracking-tight text-stone-50 leading-[1.08]">
               Single-Origin Craft &amp;{' '}
               <span className="font-serif italic font-semibold text-transparent bg-clip-text bg-gradient-to-r from-[#f3cfa0] via-[#e2a657] to-[#c77d2f]">
                 Precision Extraction
@@ -732,21 +756,21 @@ export default function Home() {
               </button>
             </div>
 
-            <div className="grid grid-cols-3 gap-6 max-w-lg pt-4 border-t border-stone-800/80">
+            <div className="grid grid-cols-3 gap-3 sm:gap-6 max-w-lg pt-4 border-t border-stone-800/80">
               <div>
-                <div className="font-mono text-xl sm:text-2xl font-bold text-stone-50 flex items-baseline gap-1.5">
+                <div className="font-mono text-lg sm:text-2xl font-bold text-stone-50 flex items-baseline gap-1.5">
                   {beans.length}
                   {loading && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>}
                 </div>
-                <div className="text-[11px] font-mono uppercase tracking-wider text-stone-500 mt-0.5">Origins Cataloged</div>
+                <div className="text-[10px] sm:text-[11px] font-mono uppercase tracking-wider text-stone-500 mt-0.5">Origins Cataloged</div>
               </div>
-              <div className="border-l border-stone-800/80 pl-5">
-                <div className="font-mono text-xl sm:text-2xl font-bold text-amber-400">{recipes.length}</div>
-                <div className="text-[11px] font-mono uppercase tracking-wider text-stone-500 mt-0.5">Brew Formulas</div>
+              <div className="border-l border-stone-800/80 pl-3 sm:pl-5">
+                <div className="font-mono text-lg sm:text-2xl font-bold text-amber-400">{recipes.length}</div>
+                <div className="text-[10px] sm:text-[11px] font-mono uppercase tracking-wider text-stone-500 mt-0.5">Brew Formulas</div>
               </div>
-              <div className="border-l border-stone-800/80 pl-5">
-                <div className="font-mono text-xl sm:text-2xl font-bold text-emerald-400">{totalStockKg} kg</div>
-                <div className="text-[11px] font-mono uppercase tracking-wider text-stone-500 mt-0.5">Vault Reserve</div>
+              <div className="border-l border-stone-800/80 pl-3 sm:pl-5">
+                <div className="font-mono text-lg sm:text-2xl font-bold text-emerald-400">{totalStockKg} kg</div>
+                <div className="text-[10px] sm:text-[11px] font-mono uppercase tracking-wider text-stone-500 mt-0.5">Vault Reserve</div>
               </div>
             </div>
           </div>
@@ -929,8 +953,8 @@ export default function Home() {
         {activeTab === 'beans' && (
           <div className="space-y-6 animate-tab-enter">
             {/* Editorial Filter & Search Bar */}
-            <div className="bg-[#12100e]/95 border border-stone-800/80 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-4 shadow-lg shadow-black/30">
-              <div className="relative flex-1 min-w-[280px]">
+            <div className="bg-[#12100e]/95 border border-stone-800/80 p-3.5 sm:p-4 rounded-2xl flex flex-col lg:flex-row lg:flex-wrap lg:items-center justify-between gap-3 sm:gap-4 shadow-lg shadow-black/30">
+              <div className="relative w-full lg:flex-1 lg:min-w-[280px]">
                 <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-500" />
                 <input
                   type="text"
@@ -943,15 +967,15 @@ export default function Home() {
               </div>
 
               {/* Filter Process */}
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[10px] font-mono uppercase tracking-widest text-stone-500 flex items-center gap-1 mr-1">
+              <div className="flex items-center gap-1.5 flex-nowrap sm:flex-wrap overflow-x-auto no-scrollbar pb-0.5 sm:pb-0">
+                <span className="shrink-0 text-[10px] font-mono uppercase tracking-widest text-stone-500 flex items-center gap-1 mr-1">
                   <Filter className="w-3 h-3" /> Process
                 </span>
                 {['', 'WASHED', 'NATURAL', 'HONEY', 'ANAEROBIC', 'EXPERIMENTAL'].map((proc) => (
                   <button
                     key={proc}
                     onClick={() => setSelectedProcess(proc)}
-                    className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold tracking-wide border transition-all duration-200 ${
+                    className={`shrink-0 px-3 py-1.5 rounded-lg text-[11px] font-semibold tracking-wide border transition-all duration-200 ${
                       selectedProcess === proc
                         ? 'bg-[#d89946] text-stone-950 border-amber-400/80 font-bold shadow-sm'
                         : 'bg-stone-950/80 border-stone-800 text-stone-400 hover:border-stone-700 hover:text-stone-100'
@@ -963,15 +987,15 @@ export default function Home() {
               </div>
 
               {/* Filter Roast Level */}
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[10px] font-mono uppercase tracking-widest text-stone-500 flex items-center gap-1 mr-1">
+              <div className="flex items-center gap-1.5 flex-nowrap sm:flex-wrap overflow-x-auto no-scrollbar pb-0.5 sm:pb-0">
+                <span className="shrink-0 text-[10px] font-mono uppercase tracking-widest text-stone-500 flex items-center gap-1 mr-1">
                   <Flame className="w-3 h-3" /> Roast
                 </span>
                 {['', 'LIGHT', 'LIGHT_MEDIUM', 'MEDIUM', 'DARK'].map((roast) => (
                   <button
                     key={roast}
                     onClick={() => setSelectedRoast(roast)}
-                    className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold tracking-wide border transition-all duration-200 ${
+                    className={`shrink-0 px-3 py-1.5 rounded-lg text-[11px] font-semibold tracking-wide border transition-all duration-200 ${
                       selectedRoast === roast
                         ? 'bg-[#d89946] text-stone-950 border-amber-400/80 font-bold shadow-sm'
                         : 'bg-stone-950/80 border-stone-800 text-stone-400 hover:border-stone-700 hover:text-stone-100'
@@ -1133,10 +1157,10 @@ export default function Home() {
 
           return (
           <div className="space-y-6 animate-tab-enter">
-            <div className="bg-[#12100e]/95 border border-stone-800/80 p-4 rounded-2xl space-y-4 shadow-lg shadow-black/30">
+            <div className="bg-[#12100e]/95 border border-stone-800/80 p-3.5 sm:p-4 rounded-2xl space-y-3.5 sm:space-y-4 shadow-lg shadow-black/30">
               {/* Top Bar: Search + Category Tabs + Share CTA */}
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="relative flex-1 min-w-[240px]">
+              <div className="flex flex-col md:flex-row md:flex-wrap md:items-center justify-between gap-3">
+                <div className="relative w-full md:flex-1 md:min-w-[240px]">
                   <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-500" />
                   <input
                     type="text"
@@ -1149,7 +1173,7 @@ export default function Home() {
                 </div>
 
                 {/* Category Segmented Tabs */}
-                <div className="flex items-center gap-1 bg-stone-950 p-1 rounded-xl border border-stone-800">
+                <div className="grid grid-cols-2 sm:inline-flex items-center gap-1 bg-stone-950 p-1 rounded-xl border border-stone-800 w-full sm:w-auto">
                   {[
                     { id: 'all', label: 'All Guides' },
                     { id: 'manual', label: 'Manual Brew' },
@@ -1162,7 +1186,7 @@ export default function Home() {
                         setRecipeCategory(cat.id as 'all' | 'manual' | 'classic' | 'trending');
                         setSelectedMethod('');
                       }}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 whitespace-nowrap ${
                         recipeCategory === cat.id
                           ? 'bg-[#d89946] text-stone-950 font-bold shadow-sm'
                           : 'text-stone-400 hover:text-stone-100'
@@ -1182,20 +1206,20 @@ export default function Home() {
                       setShowNewRecipeModal(true);
                     }
                   }}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-[#d89946] hover:bg-[#e5aa59] text-stone-950 font-bold text-xs rounded-xl shadow-md transition-all shrink-0"
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#d89946] hover:bg-[#e5aa59] text-stone-950 font-bold text-xs rounded-xl shadow-md transition-all shrink-0 w-full sm:w-auto"
                 >
                   <Plus className="w-4 h-4" /> Share Recipe
                 </button>
               </div>
 
-              {/* Clean Device Pills Row */}
-              <div className="flex items-center gap-2 flex-wrap pt-2.5 border-t border-stone-800/70">
-                <span className="text-[10px] font-mono text-stone-500 uppercase tracking-widest mr-1">
+              {/* Clean Device Pills Row (Horizontally scrollable on mobile) */}
+              <div className="flex items-center gap-2 flex-nowrap sm:flex-wrap overflow-x-auto no-scrollbar pt-2.5 pb-0.5 sm:pb-0 border-t border-stone-800/70">
+                <span className="shrink-0 text-[10px] font-mono text-stone-500 uppercase tracking-widest mr-1">
                   Device
                 </span>
                 <button
                   onClick={() => setSelectedMethod('')}
-                  className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all duration-200 ${
+                  className={`shrink-0 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all duration-200 ${
                     selectedMethod === ''
                       ? 'bg-[#d89946] text-stone-950 border-amber-400/80 font-bold shadow-sm'
                       : 'bg-stone-950/80 border-stone-800 text-stone-400 hover:border-stone-700 hover:text-stone-100'
@@ -1207,7 +1231,7 @@ export default function Home() {
                   <button
                     key={m.id}
                     onClick={() => setSelectedMethod(m.id)}
-                    className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all duration-200 ${
+                    className={`shrink-0 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all duration-200 ${
                       selectedMethod === m.id
                         ? 'bg-[#d89946] text-stone-950 border-amber-400/80 font-bold shadow-sm'
                         : 'bg-stone-950/80 border-stone-800 text-stone-400 hover:border-stone-700 hover:text-stone-100'
@@ -1463,19 +1487,19 @@ export default function Home() {
             </div>
 
             {/* Generated Step-by-Step Pour Timeline & LIVE BREW TIMER */}
-            <div className="lg:col-span-2 bg-stone-900 border border-stone-800 rounded-3xl p-6 lg:p-8 flex flex-col justify-between shadow-xl">
+            <div className="lg:col-span-2 bg-stone-900 border border-stone-800 rounded-3xl p-5 sm:p-6 lg:p-8 flex flex-col justify-between shadow-xl">
               <div>
-                <div className="flex flex-wrap items-center justify-between mb-6 gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
                   <div>
-                    <h3 className="text-xl font-black text-white">Dynamic Extraction Timeline</h3>
+                    <h3 className="text-lg sm:text-xl font-black text-white">Dynamic Extraction Timeline</h3>
                     <p className="text-xs text-stone-400">
                       Calculated pour phases for {calcDose}g dose at 1:{calcRatio} ratio
                     </p>
                   </div>
 
                   {/* Interactive Live Timer Bar */}
-                  <div className="flex items-center gap-3 bg-stone-950 px-4 py-2 rounded-2xl border border-stone-800">
-                    <div className="text-right">
+                  <div className="flex items-center justify-between sm:justify-start gap-3 bg-stone-950 px-4 py-2 rounded-2xl border border-stone-800 w-full sm:w-auto">
+                    <div className="text-left sm:text-right">
                       <div className="text-[10px] text-stone-500 uppercase font-bold">Stopwatch</div>
                       <div className="text-lg font-mono font-black text-amber-400">
                         {Math.floor(brewSeconds / 60)
@@ -1559,7 +1583,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="mt-8 border-t border-stone-800 pt-4 flex items-center justify-between">
+              <div className="mt-8 border-t border-stone-800 pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <span className="text-xs text-stone-500">
                   Ready to brew? Start your timer and follow each phase.
                 </span>
@@ -1575,7 +1599,7 @@ export default function Home() {
                     setNewRecipeMethod(calcMethod);
                     setShowNewRecipeModal(true);
                   }}
-                  className="px-5 py-2.5 bg-amber-600 hover:bg-amber-500 text-stone-950 font-extrabold text-xs rounded-xl shadow-md transition-all"
+                  className="px-5 py-2.5 bg-amber-600 hover:bg-amber-500 text-stone-950 font-extrabold text-xs rounded-xl shadow-md transition-all w-full sm:w-auto text-center"
                 >
                   Save as Community Recipe
                 </button>
@@ -1650,8 +1674,109 @@ export default function Home() {
                   </button>
                 </div>
 
-                {/* Inventory Table */}
-                <div className="bg-stone-900 border border-stone-800 rounded-3xl overflow-hidden shadow-xl">
+                {/* Mobile Inventory Cards (< lg) */}
+                <div className="lg:hidden space-y-3">
+                  {beans.map((bean, index) => {
+                    const isLow = bean.stockGrams <= bean.minStockThreshold;
+                    const bagSize = bean.bagSizeGrams || 250;
+                    const totalBags = Math.floor(bean.stockGrams / bagSize);
+                    return (
+                      <div key={bean.id} className="bg-stone-900 border border-stone-800 rounded-2xl p-4 space-y-3 shadow-lg">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-stone-950 border border-stone-800 font-mono font-black text-amber-400 text-[11px] shrink-0">
+                              #{index + 1}
+                            </span>
+                            <Image
+                              src={bean.imageUrl || 'https://images.unsplash.com/photo-1587734195503-904fca47e0e9?w=100'}
+                              alt={bean.name}
+                              width={44}
+                              height={44}
+                              unoptimized
+                              className="w-11 h-11 rounded-xl object-cover border border-stone-700 shrink-0"
+                            />
+                            <div className="min-w-0">
+                              <div className="font-extrabold text-stone-100 text-sm truncate">{bean.name}</div>
+                              <div className="text-[11px] text-stone-400 truncate">
+                                {bean.origin} · {bean.process}
+                              </div>
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={async () => {
+                              if (confirm(`Delete ${bean.name}?`)) {
+                                await api.deleteBean(bean.id);
+                                showNotification('Bean removed');
+                                loadData();
+                              }
+                            }}
+                            aria-label={`Delete ${bean.name}`}
+                            className="text-stone-500 hover:text-rose-400 p-1.5 rounded-lg transition-colors shrink-0"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 bg-stone-950/90 p-2.5 rounded-xl border border-stone-800/80 text-xs">
+                          <div>
+                            <div className="text-[10px] text-stone-500 uppercase">Stock</div>
+                            <div className={`font-black ${isLow ? 'text-rose-400' : 'text-emerald-400'}`}>
+                              {bean.stockGrams.toLocaleString('id-ID')}g
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-[10px] text-stone-500 uppercase">Threshold</div>
+                            <div className="font-semibold text-stone-300">{bean.minStockThreshold.toLocaleString('id-ID')}g</div>
+                          </div>
+                          <div>
+                            <div className="text-[10px] text-stone-500 uppercase">Price</div>
+                            <div className="font-bold text-amber-300">Rp {bean.price.toLocaleString('id-ID')}</div>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                          <div className="flex items-center bg-stone-950 border border-stone-800 rounded-xl p-1 shadow-inner">
+                            <button
+                              onClick={() => handleUpdateStock(bean.id, bean.stockGrams, -bagSize)}
+                              disabled={bean.stockGrams < bagSize}
+                              className="w-8 h-8 flex items-center justify-center rounded-lg bg-stone-900 hover:bg-rose-950/60 text-stone-300 hover:text-rose-400 font-black text-xs disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                            >
+                              -1
+                            </button>
+                            <span className="px-3 text-xs font-mono font-black text-amber-400">
+                              {totalBags} <span className="text-[10px] text-stone-500 font-sans">bags</span>
+                            </span>
+                            <button
+                              onClick={() => handleUpdateStock(bean.id, bean.stockGrams, bagSize)}
+                              className="w-8 h-8 flex items-center justify-center rounded-lg bg-stone-900 hover:bg-emerald-950/60 text-stone-300 hover:text-emerald-400 font-black text-xs transition-all"
+                            >
+                              +1
+                            </button>
+                          </div>
+
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => handleUpdateStock(bean.id, bean.stockGrams, -200)}
+                              className="px-2.5 py-1.5 bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-700 rounded-lg text-[11px] font-bold transition-all"
+                            >
+                              -200g
+                            </button>
+                            <button
+                              onClick={() => handleUpdateStock(bean.id, bean.stockGrams, 1000)}
+                              className="px-2.5 py-1.5 bg-amber-600/15 hover:bg-amber-600/25 text-amber-400 border border-amber-500/30 rounded-lg text-[11px] font-extrabold transition-all"
+                            >
+                              +1kg
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Desktop Inventory Table (>= lg) */}
+                <div className="hidden lg:block bg-stone-900 border border-stone-800 rounded-3xl overflow-hidden shadow-xl">
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs">
                       <thead className="bg-stone-950 text-stone-400 uppercase tracking-wider text-[10px] border-b border-stone-800 font-bold">
@@ -1821,134 +1946,183 @@ export default function Home() {
 
       {/* MODAL 1: RECIPE DETAILS & TIMELINE */}
       {selectedRecipe && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-stone-900 border border-stone-800 rounded-3xl max-w-2xl w-full p-6 lg:p-8 space-y-6 my-8 shadow-2xl">
-            <div className="flex items-start justify-between border-b border-stone-800 pb-4">
-              <div>
-                <span className="px-3 py-1 rounded-md text-xs font-black bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase tracking-wider">
-                  {formatBrewMethodLabel(selectedRecipe.method)}
-                </span>
-                <h2 className="text-2xl font-black text-white mt-2 leading-tight">{selectedRecipe.title}</h2>
-                <div className="text-xs text-stone-400 mt-1 flex items-center gap-2">
-                  <span>Recipe by {selectedRecipe.user?.name}</span>
-                  <span>·</span>
-                  <span>Grind: {selectedRecipe.grindSize}</span>
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="brew-guide-modal-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSelectedRecipe(null);
+          }}
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+        >
+          <div className="bg-stone-900 border border-stone-800 rounded-t-3xl sm:rounded-3xl max-w-2xl w-full max-h-[92dvh] sm:max-h-[88vh] flex flex-col shadow-2xl overflow-hidden animate-tab-enter">
+            {/* Pinned Modal Header */}
+            <div className="shrink-0 px-5 pt-3 pb-4 sm:px-7 sm:py-5 border-b border-stone-800 bg-stone-900/95">
+              <div className="w-10 h-1 rounded-full bg-stone-700 mx-auto mb-3 sm:hidden" />
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <span className="inline-block px-2.5 py-1 rounded-md text-[11px] font-black bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase tracking-wider">
+                    {formatBrewMethodLabel(selectedRecipe.method)}
+                  </span>
+                  <h2 id="brew-guide-modal-title" className="text-lg sm:text-2xl font-black text-white mt-2 leading-tight">
+                    {selectedRecipe.title}
+                  </h2>
+                  <div className="text-xs text-stone-400 mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                    <span>Recipe by {selectedRecipe.user?.name || 'Barista'}</span>
+                    <span>·</span>
+                    <span>Grind: {selectedRecipe.grindSize}</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedRecipe(null)}
+                  aria-label="Close brew guide"
+                  className="w-9 h-9 rounded-xl bg-stone-800/90 hover:bg-stone-700 text-stone-300 hover:text-white flex items-center justify-center shrink-0 transition-colors border border-stone-700/70"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Scrollable Modal Body */}
+            <div className="flex-1 overflow-y-auto overscroll-contain p-5 sm:p-7 space-y-5">
+              {/* Recipe specs */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 bg-stone-950 p-3.5 sm:p-4 rounded-2xl text-center border border-stone-800">
+                <div>
+                  <div className="text-[10px] text-stone-500 uppercase font-semibold">Coffee Dose</div>
+                  <div className="text-base font-black text-stone-200">{selectedRecipe.coffeeDoseGrams}g</div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-stone-500 uppercase font-semibold">Water</div>
+                  <div className="text-base font-black text-amber-400">{selectedRecipe.totalWaterMl}ml</div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-stone-500 uppercase font-semibold">Water Temp</div>
+                  <div className="text-base font-black text-stone-200">{selectedRecipe.waterTempCelsius}°C</div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-stone-500 uppercase font-semibold">Total Time</div>
+                  <div className="text-base font-black text-stone-200">{selectedRecipe.totalBrewTimeSeconds}s</div>
                 </div>
               </div>
-              <button
-                onClick={() => setSelectedRecipe(null)}
-                className="text-stone-500 hover:text-stone-300 text-xl font-bold p-1"
-              >
-                ✕
-              </button>
-            </div>
 
-            {/* Recipe specs */}
-            <div className="grid grid-cols-4 gap-3 bg-stone-950 p-4 rounded-2xl text-center border border-stone-800">
+              {/* Pour steps */}
               <div>
-                <div className="text-[10px] text-stone-500 uppercase font-semibold">Coffee Dose</div>
-                <div className="text-base font-black text-stone-200">{selectedRecipe.coffeeDoseGrams}g</div>
-              </div>
-              <div>
-                <div className="text-[10px] text-stone-500 uppercase font-semibold">Water</div>
-                <div className="text-base font-black text-amber-400">{selectedRecipe.totalWaterMl}ml</div>
-              </div>
-              <div>
-                <div className="text-[10px] text-stone-500 uppercase font-semibold">Water Temp</div>
-                <div className="text-base font-black text-stone-200">{selectedRecipe.waterTempCelsius}°C</div>
-              </div>
-              <div>
-                <div className="text-[10px] text-stone-500 uppercase font-semibold">Total Time</div>
-                <div className="text-base font-black text-stone-200">{selectedRecipe.totalBrewTimeSeconds}s</div>
-              </div>
-            </div>
-
-            {/* Pour steps */}
-            <div>
-              <h4 className="text-xs font-black text-white uppercase tracking-wider mb-3">
-                Sequential Pour Timeline & Agitation
-              </h4>
-              <div className="space-y-3">
-                {selectedRecipe.pourSteps?.map((step) => (
-                  <div
-                    key={step.id || step.stepOrder}
-                    className="bg-stone-950 border border-stone-800 p-4 rounded-2xl flex items-center gap-4"
-                  >
-                    <span className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-400 font-black flex items-center justify-center text-xs shrink-0 border border-amber-500/20">
-                      #{step.stepOrder}
-                    </span>
-                    <div className="flex-1">
-                      <div className="flex justify-between text-xs font-bold mb-1">
-                        <span className="text-stone-300">
-                          Start: {Math.floor(step.startTimeSeconds / 60)}:
-                          {(step.startTimeSeconds % 60).toString().padStart(2, '0')}
-                        </span>
-                        {step.waterAmountMl > 0 && (
-                          <span className="text-amber-400 font-extrabold">+{step.waterAmountMl} ml water</span>
-                        )}
-                      </div>
-                      <p className="text-xs text-stone-400 font-medium leading-relaxed">{step.instruction}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Reviews Section */}
-            <div className="border-t border-stone-800 pt-4 space-y-4">
-              <h4 className="text-xs font-black text-white uppercase tracking-wider flex items-center justify-between">
-                <span>Community Reviews ({selectedRecipe.reviews?.length ?? 0})</span>
-                <span className="text-amber-400 flex items-center gap-1 text-xs font-bold">
-                  <Star className="w-3.5 h-3.5 fill-amber-400" />
-                  {selectedRecipe.averageRating ?? '5.0'} / 5.0
-                </span>
-              </h4>
-
-              {/* Add Review */}
-              {currentUser && (
-                <div className="bg-stone-950 p-4 rounded-2xl border border-stone-800 space-y-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-stone-400 font-bold">Rating:</span>
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        onClick={() => setReviewRating(star)}
-                        className={`text-base ${star <= reviewRating ? 'text-amber-400' : 'text-stone-600'}`}
-                      >
-                        ★
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="Share your cup notes / extraction feedback..."
-                      value={reviewComment}
-                      onChange={(e) => setReviewComment(e.target.value)}
-                      className="flex-1 bg-stone-900 border border-stone-800 px-3 py-2 rounded-xl text-xs text-stone-200 focus:outline-none focus:border-amber-500"
-                    />
-                    <button
-                      onClick={handleAddReview}
-                      className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-stone-950 text-xs font-bold rounded-xl shadow-md"
+                <h4 className="text-xs font-black text-white uppercase tracking-wider mb-3">
+                  Sequential Pour Timeline &amp; Agitation
+                </h4>
+                <div className="space-y-3">
+                  {selectedRecipe.pourSteps?.map((step) => (
+                    <div
+                      key={step.id || step.stepOrder}
+                      className="bg-stone-950 border border-stone-800 p-3.5 sm:p-4 rounded-2xl flex items-start sm:items-center gap-3 sm:gap-4"
                     >
-                      Post Review
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Review list */}
-              <div className="space-y-2.5 max-h-48 overflow-y-auto">
-                {selectedRecipe.reviews?.map((rev) => (
-                  <div key={rev.id} className="bg-stone-950/80 p-3.5 rounded-2xl border border-stone-800 text-xs">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-extrabold text-stone-200">{rev.user?.name || 'Brewer'}</span>
-                      <span className="text-amber-400 font-black">★ {rev.rating}</span>
+                      <span className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-amber-500/10 text-amber-400 font-black flex items-center justify-center text-xs shrink-0 border border-amber-500/20">
+                        #{step.stepOrder}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap justify-between gap-1 text-xs font-bold mb-1">
+                          <span className="text-stone-300">
+                            Start: {Math.floor(step.startTimeSeconds / 60)}:
+                            {(step.startTimeSeconds % 60).toString().padStart(2, '0')}
+                          </span>
+                          {step.waterAmountMl > 0 && (
+                            <span className="text-amber-400 font-extrabold">+{step.waterAmountMl} ml water</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-stone-400 font-medium leading-relaxed">{step.instruction}</p>
+                      </div>
                     </div>
-                    <p className="text-stone-400 font-medium leading-relaxed">{rev.comment}</p>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
+
+              {/* Reviews Section */}
+              <div className="border-t border-stone-800 pt-4 space-y-4">
+                <h4 className="text-xs font-black text-white uppercase tracking-wider flex items-center justify-between">
+                  <span>Community Reviews ({selectedRecipe.reviews?.length ?? 0})</span>
+                  <span className="text-amber-400 flex items-center gap-1 text-xs font-bold">
+                    <Star className="w-3.5 h-3.5 fill-amber-400" />
+                    {selectedRecipe.averageRating ?? '5.0'} / 5.0
+                  </span>
+                </h4>
+
+                {/* Add Review */}
+                {currentUser && (
+                  <div className="bg-stone-950 p-3.5 sm:p-4 rounded-2xl border border-stone-800 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-stone-400 font-bold">Rating:</span>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setReviewRating(star)}
+                          className={`text-base ${star <= reviewRating ? 'text-amber-400' : 'text-stone-600'}`}
+                        >
+                          ★
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        type="text"
+                        placeholder="Share your cup notes / extraction feedback..."
+                        value={reviewComment}
+                        onChange={(e) => setReviewComment(e.target.value)}
+                        className="flex-1 bg-stone-900 border border-stone-800 px-3 py-2 rounded-xl text-xs text-stone-200 focus:outline-none focus:border-amber-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddReview}
+                        className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-stone-950 text-xs font-bold rounded-xl shadow-md shrink-0"
+                      >
+                        Post Review
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Review list */}
+                <div className="space-y-2.5">
+                  {selectedRecipe.reviews?.map((rev) => (
+                    <div key={rev.id} className="bg-stone-950/80 p-3.5 rounded-2xl border border-stone-800 text-xs">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-extrabold text-stone-200">{rev.user?.name || 'Brewer'}</span>
+                        <span className="text-amber-400 font-black">★ {rev.rating}</span>
+                      </div>
+                      <p className="text-stone-400 font-medium leading-relaxed">{rev.comment}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Pinned Modal Footer */}
+            <div className="shrink-0 px-5 py-3.5 sm:px-7 border-t border-stone-800 bg-stone-950/90 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  const matched = BREW_METHOD_OPTIONS.find((m) => m.id === selectedRecipe.method);
+                  if (matched) setCalcCategory(matched.group);
+                  setCalcMethod(selectedRecipe.method);
+                  setCalcDose(selectedRecipe.coffeeDoseGrams);
+                  setCalcRatio(selectedRecipe.targetRatio);
+                  setActiveTab('calculator');
+                  setSelectedRecipe(null);
+                  showNotification(`Loaded "${selectedRecipe.title}" into Ratio Calculator!`);
+                }}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-stone-950 text-xs font-extrabold transition-colors"
+              >
+                <Scale className="w-3.5 h-3.5" />
+                Dial In Calculator
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedRecipe(null)}
+                className="px-4 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 text-xs font-bold border border-stone-700 transition-colors"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
@@ -1956,367 +2130,405 @@ export default function Home() {
 
       {/* MODAL 2: CREATE RECIPE WITH NESTED POUR STEPS */}
       {showNewRecipeModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowNewRecipeModal(false);
+          }}
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+        >
           <form
             onSubmit={handleCreateRecipe}
-            className="bg-stone-900 border border-stone-800 rounded-3xl max-w-xl w-full p-6 space-y-4 my-8 shadow-2xl"
+            className="bg-stone-900 border border-stone-800 rounded-t-3xl sm:rounded-3xl max-w-xl w-full max-h-[92dvh] sm:max-h-[88vh] flex flex-col shadow-2xl overflow-hidden animate-tab-enter"
           >
-            <div className="flex items-center justify-between border-b border-stone-800 pb-3">
-              <h3 className="font-black text-lg text-white">Share New Brew Guide</h3>
-              <button
-                type="button"
-                onClick={() => setShowNewRecipeModal(false)}
-                className="text-stone-500 hover:text-stone-300 text-lg"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div>
-              <label className="text-xs text-stone-400 block mb-1">Recipe Title</label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. 4:6 Method Light Roast Masterclass"
-                value={newRecipeTitle}
-                onChange={(e) => setNewRecipeTitle(e.target.value)}
-                className="w-full bg-stone-950 border border-stone-800 px-3 py-2 rounded-xl text-xs text-stone-200"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-stone-400 block mb-1">Brewing Device & Method</label>
-                <select
-                  value={newRecipeMethod}
-                  onChange={(e) => setNewRecipeMethod(e.target.value as BrewMethod)}
-                  className="w-full bg-stone-950 border border-stone-800 px-3 py-2 rounded-xl text-xs text-stone-200"
+            <div className="shrink-0 px-5 pt-3 pb-3.5 sm:px-6 sm:py-4 border-b border-stone-800 bg-stone-900/95">
+              <div className="w-10 h-1 rounded-full bg-stone-700 mx-auto mb-3 sm:hidden" />
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="font-black text-base sm:text-lg text-white">Share New Brew Guide</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowNewRecipeModal(false)}
+                  aria-label="Close share recipe modal"
+                  className="w-9 h-9 rounded-xl bg-stone-800/90 hover:bg-stone-700 text-stone-300 hover:text-white flex items-center justify-center shrink-0 transition-colors border border-stone-700/70"
                 >
-                  <optgroup label="Manual Brew & Filter">
-                    {BREW_METHOD_OPTIONS.filter((m) => m.group === 'manual').map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.label}
-                      </option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="Espresso & Cafe Classics">
-                    {BREW_METHOD_OPTIONS.filter((m) => m.group === 'classic').map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.label}
-                      </option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="Trending Signature Menus">
-                    {BREW_METHOD_OPTIONS.filter((m) => m.group === 'trending').map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.label}
-                      </option>
-                    ))}
-                  </optgroup>
-                </select>
+                  <X className="w-4 h-4" />
+                </button>
               </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto overscroll-contain p-5 sm:p-6 space-y-4">
               <div>
-                <label className="text-xs text-stone-400 block mb-1">Grind Size</label>
+                <label className="text-xs text-stone-400 block mb-1">Recipe Title</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Medium-Fine (18 Clicks)"
-                  value={newRecipeGrind}
-                  onChange={(e) => setNewRecipeGrind(e.target.value)}
+                  placeholder="e.g. 4:6 Method Light Roast Masterclass"
+                  value={newRecipeTitle}
+                  onChange={(e) => setNewRecipeTitle(e.target.value)}
                   className="w-full bg-stone-950 border border-stone-800 px-3 py-2 rounded-xl text-xs text-stone-200"
                 />
               </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-stone-400 block mb-1">Brewing Device &amp; Method</label>
+                  <select
+                    value={newRecipeMethod}
+                    onChange={(e) => setNewRecipeMethod(e.target.value as BrewMethod)}
+                    className="w-full bg-stone-950 border border-stone-800 px-3 py-2 rounded-xl text-xs text-stone-200"
+                  >
+                    <optgroup label="Manual Brew & Filter">
+                      {BREW_METHOD_OPTIONS.filter((m) => m.group === 'manual').map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Espresso & Cafe Classics">
+                      {BREW_METHOD_OPTIONS.filter((m) => m.group === 'classic').map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Trending Signature Menus">
+                      {BREW_METHOD_OPTIONS.filter((m) => m.group === 'trending').map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-stone-400 block mb-1">Grind Size</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Medium-Fine (18 Clicks)"
+                    value={newRecipeGrind}
+                    onChange={(e) => setNewRecipeGrind(e.target.value)}
+                    className="w-full bg-stone-950 border border-stone-800 px-3 py-2 rounded-xl text-xs text-stone-200"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-2">
+                <div>
+                  <label className="text-[10px] text-stone-400 block mb-1">Dose (g)</label>
+                  <input
+                    type="number"
+                    min="5"
+                    value={newRecipeDose}
+                    onChange={(e) => setNewRecipeDose(Number(e.target.value))}
+                    className="w-full bg-stone-950 border border-stone-800 px-2.5 py-2 sm:py-1.5 rounded-lg text-xs text-stone-200"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-stone-400 block mb-1">Ratio (1:X)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={newRecipeRatio}
+                    onChange={(e) => setNewRecipeRatio(Number(e.target.value))}
+                    className="w-full bg-stone-950 border border-stone-800 px-2.5 py-2 sm:py-1.5 rounded-lg text-xs text-stone-200"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-stone-400 block mb-1">Temp (°C)</label>
+                  <input
+                    type="number"
+                    value={newRecipeTemp}
+                    onChange={(e) => setNewRecipeTemp(Number(e.target.value))}
+                    className="w-full bg-stone-950 border border-stone-800 px-2.5 py-2 sm:py-1.5 rounded-lg text-xs text-stone-200"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-stone-400 block mb-1">Time (sec)</label>
+                  <input
+                    type="number"
+                    value={newRecipeTime}
+                    onChange={(e) => setNewRecipeTime(Number(e.target.value))}
+                    className="w-full bg-stone-950 border border-stone-800 px-2.5 py-2 sm:py-1.5 rounded-lg text-xs text-stone-200"
+                  />
+                </div>
+              </div>
+
+              {/* Nested Pour Steps Builder */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs text-stone-300 font-bold uppercase">
+                    Pour Steps Breakdown
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setNewRecipeSteps([
+                        ...newRecipeSteps,
+                        {
+                          startTimeSeconds: newRecipeSteps.length * 45,
+                          waterAmountMl: 50,
+                          instruction: 'Next pour phase',
+                        },
+                      ])
+                    }
+                    className="text-xs text-amber-400 hover:text-amber-300 font-bold"
+                  >
+                    + Add Step
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {newRecipeSteps.map((step, idx) => (
+                    <div key={idx} className="flex flex-wrap sm:flex-nowrap items-center gap-2 bg-stone-950 p-2.5 sm:p-2 rounded-xl sm:rounded-lg border border-stone-800">
+                      <span className="text-[10px] font-bold text-amber-400">#{idx + 1}</span>
+                      <input
+                        type="number"
+                        placeholder="Sec"
+                        value={step.startTimeSeconds}
+                        onChange={(e) => {
+                          const updated = [...newRecipeSteps];
+                          updated[idx].startTimeSeconds = Number(e.target.value);
+                          setNewRecipeSteps(updated);
+                        }}
+                        className="w-16 bg-stone-900 border border-stone-700 px-1.5 py-1 rounded text-xs text-stone-200"
+                      />
+                      <input
+                        type="number"
+                        placeholder="Water ml"
+                        value={step.waterAmountMl}
+                        onChange={(e) => {
+                          const updated = [...newRecipeSteps];
+                          updated[idx].waterAmountMl = Number(e.target.value);
+                          setNewRecipeSteps(updated);
+                        }}
+                        className="w-16 bg-stone-900 border border-stone-700 px-1.5 py-1 rounded text-xs text-stone-200"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Instruction"
+                        value={step.instruction}
+                        onChange={(e) => {
+                          const updated = [...newRecipeSteps];
+                          updated[idx].instruction = e.target.value;
+                          setNewRecipeSteps(updated);
+                        }}
+                        className="w-full sm:w-auto sm:flex-1 bg-stone-900 border border-stone-700 px-2 py-1.5 sm:py-1 rounded text-xs text-stone-200"
+                      />
+                      {newRecipeSteps.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setNewRecipeSteps(newRecipeSteps.filter((_, i) => i !== idx))}
+                          className="text-stone-500 hover:text-rose-400 text-xs px-1 ml-auto sm:ml-0"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-4 gap-2">
-              <div>
-                <label className="text-[10px] text-stone-400 block mb-1">Dose (g)</label>
-                <input
-                  type="number"
-                  min="5"
-                  value={newRecipeDose}
-                  onChange={(e) => setNewRecipeDose(Number(e.target.value))}
-                  className="w-full bg-stone-950 border border-stone-800 px-2 py-1.5 rounded-lg text-xs text-stone-200"
-                />
-              </div>
-              <div>
-                <label className="text-[10px] text-stone-400 block mb-1">Ratio (1:X)</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={newRecipeRatio}
-                  onChange={(e) => setNewRecipeRatio(Number(e.target.value))}
-                  className="w-full bg-stone-950 border border-stone-800 px-2 py-1.5 rounded-lg text-xs text-stone-200"
-                />
-              </div>
-              <div>
-                <label className="text-[10px] text-stone-400 block mb-1">Temp (°C)</label>
-                <input
-                  type="number"
-                  value={newRecipeTemp}
-                  onChange={(e) => setNewRecipeTemp(Number(e.target.value))}
-                  className="w-full bg-stone-950 border border-stone-800 px-2 py-1.5 rounded-lg text-xs text-stone-200"
-                />
-              </div>
-              <div>
-                <label className="text-[10px] text-stone-400 block mb-1">Time (sec)</label>
-                <input
-                  type="number"
-                  value={newRecipeTime}
-                  onChange={(e) => setNewRecipeTime(Number(e.target.value))}
-                  className="w-full bg-stone-950 border border-stone-800 px-2 py-1.5 rounded-lg text-xs text-stone-200"
-                />
-              </div>
+            <div className="shrink-0 px-5 py-3.5 sm:px-6 border-t border-stone-800 bg-stone-950/90">
+              <button
+                type="submit"
+                className="w-full py-3 bg-amber-600 hover:bg-amber-500 text-stone-950 font-black text-xs rounded-xl shadow-md transition-all"
+              >
+                Publish Recipe with Cascade Pour Steps
+              </button>
             </div>
-
-            {/* Nested Pour Steps Builder */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-xs text-stone-300 font-bold uppercase">
-                  Pour Steps Breakdown
-                </label>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setNewRecipeSteps([
-                      ...newRecipeSteps,
-                      {
-                        startTimeSeconds: newRecipeSteps.length * 45,
-                        waterAmountMl: 50,
-                        instruction: 'Next pour phase',
-                      },
-                    ])
-                  }
-                  className="text-xs text-amber-400 hover:text-amber-300 font-bold"
-                >
-                  + Add Step
-                </button>
-              </div>
-
-              <div className="space-y-2 max-h-36 overflow-y-auto">
-                {newRecipeSteps.map((step, idx) => (
-                  <div key={idx} className="flex items-center gap-2 bg-stone-950 p-2 rounded-lg border border-stone-800">
-                    <span className="text-[10px] font-bold text-amber-400">#{idx + 1}</span>
-                    <input
-                      type="number"
-                      placeholder="Sec"
-                      value={step.startTimeSeconds}
-                      onChange={(e) => {
-                        const updated = [...newRecipeSteps];
-                        updated[idx].startTimeSeconds = Number(e.target.value);
-                        setNewRecipeSteps(updated);
-                      }}
-                      className="w-16 bg-stone-900 border border-stone-700 px-1.5 py-1 rounded text-xs text-stone-200"
-                    />
-                    <input
-                      type="number"
-                      placeholder="Water ml"
-                      value={step.waterAmountMl}
-                      onChange={(e) => {
-                        const updated = [...newRecipeSteps];
-                        updated[idx].waterAmountMl = Number(e.target.value);
-                        setNewRecipeSteps(updated);
-                      }}
-                      className="w-16 bg-stone-900 border border-stone-700 px-1.5 py-1 rounded text-xs text-stone-200"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Instruction"
-                      value={step.instruction}
-                      onChange={(e) => {
-                        const updated = [...newRecipeSteps];
-                        updated[idx].instruction = e.target.value;
-                        setNewRecipeSteps(updated);
-                      }}
-                      className="flex-1 bg-stone-900 border border-stone-700 px-2 py-1 rounded text-xs text-stone-200"
-                    />
-                    {newRecipeSteps.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => setNewRecipeSteps(newRecipeSteps.filter((_, i) => i !== idx))}
-                        className="text-stone-500 hover:text-rose-400 text-xs px-1"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full py-3 bg-amber-600 hover:bg-amber-500 text-stone-950 font-black text-xs rounded-xl shadow-md transition-all mt-4"
-            >
-              Publish Recipe with Cascade Pour Steps
-            </button>
           </form>
         </div>
       )}
 
       {/* MODAL 3: ADD SINGLE-ORIGIN BEAN WITH FILE UPLOAD */}
       {showNewBeanModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowNewBeanModal(false);
+          }}
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+        >
           <form
             onSubmit={handleCreateBean}
-            className="bg-stone-900 border border-stone-800 rounded-3xl max-w-xl w-full p-6 space-y-4 my-8 shadow-2xl"
+            className="bg-stone-900 border border-stone-800 rounded-t-3xl sm:rounded-3xl max-w-xl w-full max-h-[92dvh] sm:max-h-[88vh] flex flex-col shadow-2xl overflow-hidden animate-tab-enter"
           >
-            <div className="flex items-center justify-between border-b border-stone-800 pb-3">
-              <h3 className="font-black text-lg text-white">Catalog Single-Origin Bean</h3>
+            <div className="shrink-0 px-5 pt-3 pb-3.5 sm:px-6 sm:py-4 border-b border-stone-800 bg-stone-900/95">
+              <div className="w-10 h-1 rounded-full bg-stone-700 mx-auto mb-3 sm:hidden" />
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="font-black text-base sm:text-lg text-white">Catalog Single-Origin Bean</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowNewBeanModal(false)}
+                  aria-label="Close add bean modal"
+                  className="w-9 h-9 rounded-xl bg-stone-800/90 hover:bg-stone-700 text-stone-300 hover:text-white flex items-center justify-center shrink-0 transition-colors border border-stone-700/70"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto overscroll-contain p-5 sm:p-6 space-y-4">
+              <div>
+                <label className="text-xs text-stone-400 block mb-1">Bean Name</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Panama Boquete Geisha - Finca Deborah"
+                  value={newBeanName}
+                  onChange={(e) => setNewBeanName(e.target.value)}
+                  className="w-full bg-stone-950 border border-stone-800 px-3 py-2 rounded-xl text-xs text-stone-200"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-stone-400 block mb-1">Origin / Region</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Boquete, Chiriqui, Panama"
+                    value={newBeanOrigin}
+                    onChange={(e) => setNewBeanOrigin(e.target.value)}
+                    className="w-full bg-stone-950 border border-stone-800 px-3 py-2 rounded-xl text-xs text-stone-200"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-stone-400 block mb-1">Varietal</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Green Tip Geisha"
+                    value={newBeanVarietal}
+                    onChange={(e) => setNewBeanVarietal(e.target.value)}
+                    className="w-full bg-stone-950 border border-stone-800 px-3 py-2 rounded-xl text-xs text-stone-200"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-stone-400 block mb-1">Process Method</label>
+                  <select
+                    value={newBeanProcess}
+                    onChange={(e) => setNewBeanProcess(e.target.value as ProcessMethod)}
+                    className="w-full bg-stone-950 border border-stone-800 px-3 py-2 rounded-xl text-xs text-stone-200"
+                  >
+                    <option value="WASHED">Washed</option>
+                    <option value="NATURAL">Natural</option>
+                    <option value="HONEY">Honey</option>
+                    <option value="ANAEROBIC">Anaerobic</option>
+                    <option value="EXPERIMENTAL">Experimental</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-stone-400 block mb-1">Roast Level</label>
+                  <select
+                    value={newBeanRoast}
+                    onChange={(e) => setNewBeanRoast(e.target.value as RoastLevel)}
+                    className="w-full bg-stone-950 border border-stone-800 px-3 py-2 rounded-xl text-xs text-stone-200"
+                  >
+                    <option value="LIGHT">Light</option>
+                    <option value="LIGHT_MEDIUM">Light-Medium</option>
+                    <option value="MEDIUM">Medium</option>
+                    <option value="DARK">Dark</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="text-xs text-stone-400 block mb-1">Stock (Grams)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={newBeanStock}
+                    onChange={(e) => setNewBeanStock(Number(e.target.value))}
+                    className="w-full bg-stone-950 border border-stone-800 px-3 py-2 rounded-xl text-xs text-stone-200"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-stone-400 block mb-1">Alert Threshold</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={newBeanThreshold}
+                    onChange={(e) => setNewBeanThreshold(Number(e.target.value))}
+                    className="w-full bg-stone-950 border border-stone-800 px-3 py-2 rounded-xl text-xs text-stone-200"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-stone-400 block mb-1">Price (IDR)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={newBeanPrice}
+                    onChange={(e) => setNewBeanPrice(Number(e.target.value))}
+                    className="w-full bg-stone-950 border border-stone-800 px-3 py-2 rounded-xl text-xs text-stone-200"
+                  />
+                </div>
+              </div>
+
+              {/* File Upload Section */}
+              <div className="bg-stone-950 p-4 rounded-2xl border border-stone-800 space-y-2">
+                <label className="text-xs text-stone-300 font-bold flex items-center gap-1.5">
+                  <Upload className="w-3.5 h-3.5 text-amber-400" />
+                  Upload Packaging Photo (Multer Server Storage)
+                </label>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={handleFileUpload}
+                  className="w-full text-xs text-stone-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-amber-600 file:text-stone-950 hover:file:bg-amber-500 cursor-pointer"
+                />
+                {isUploading && <p className="text-xs text-amber-400 animate-pulse">Uploading file to server storage...</p>}
+                {uploadedImageUrl && (
+                  <div className="flex items-center gap-2 text-xs text-emerald-400 font-semibold break-all">
+                    <CheckCircle2 className="w-4 h-4 shrink-0" /> File attached: {uploadedImageUrl}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="text-xs text-stone-400 block mb-1">Tasting Notes (comma-separated)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. White Jasmine, Bergamot, White Peach"
+                  value={newBeanNotes}
+                  onChange={(e) => setNewBeanNotes(e.target.value)}
+                  className="w-full bg-stone-950 border border-stone-800 px-3 py-2 rounded-xl text-xs text-stone-200"
+                />
+              </div>
+            </div>
+
+            <div className="shrink-0 px-5 py-3.5 sm:px-6 border-t border-stone-800 bg-stone-950/90">
               <button
-                type="button"
-                onClick={() => setShowNewBeanModal(false)}
-                className="text-stone-500 hover:text-stone-300 text-lg"
+                type="submit"
+                className="w-full py-3 bg-amber-600 hover:bg-amber-500 text-stone-950 font-black text-xs rounded-xl shadow-md transition-all"
               >
-                ✕
+                Save Bean to Roastery Inventory
               </button>
             </div>
-
-            <div>
-              <label className="text-xs text-stone-400 block mb-1">Bean Name</label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. Panama Boquete Geisha - Finca Deborah"
-                value={newBeanName}
-                onChange={(e) => setNewBeanName(e.target.value)}
-                className="w-full bg-stone-950 border border-stone-800 px-3 py-2 rounded-xl text-xs text-stone-200"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-stone-400 block mb-1">Origin / Region</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Boquete, Chiriqui, Panama"
-                  value={newBeanOrigin}
-                  onChange={(e) => setNewBeanOrigin(e.target.value)}
-                  className="w-full bg-stone-950 border border-stone-800 px-3 py-2 rounded-xl text-xs text-stone-200"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-stone-400 block mb-1">Varietal</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Green Tip Geisha"
-                  value={newBeanVarietal}
-                  onChange={(e) => setNewBeanVarietal(e.target.value)}
-                  className="w-full bg-stone-950 border border-stone-800 px-3 py-2 rounded-xl text-xs text-stone-200"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-stone-400 block mb-1">Process Method</label>
-                <select
-                  value={newBeanProcess}
-                  onChange={(e) => setNewBeanProcess(e.target.value as ProcessMethod)}
-                  className="w-full bg-stone-950 border border-stone-800 px-3 py-2 rounded-xl text-xs text-stone-200"
-                >
-                  <option value="WASHED">Washed</option>
-                  <option value="NATURAL">Natural</option>
-                  <option value="HONEY">Honey</option>
-                  <option value="ANAEROBIC">Anaerobic</option>
-                  <option value="EXPERIMENTAL">Experimental</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-xs text-stone-400 block mb-1">Roast Level</label>
-                <select
-                  value={newBeanRoast}
-                  onChange={(e) => setNewBeanRoast(e.target.value as RoastLevel)}
-                  className="w-full bg-stone-950 border border-stone-800 px-3 py-2 rounded-xl text-xs text-stone-200"
-                >
-                  <option value="LIGHT">Light</option>
-                  <option value="LIGHT_MEDIUM">Light-Medium</option>
-                  <option value="MEDIUM">Medium</option>
-                  <option value="DARK">Dark</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <label className="text-xs text-stone-400 block mb-1">Stock (Grams)</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={newBeanStock}
-                  onChange={(e) => setNewBeanStock(Number(e.target.value))}
-                  className="w-full bg-stone-950 border border-stone-800 px-3 py-2 rounded-xl text-xs text-stone-200"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-stone-400 block mb-1">Alert Threshold</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={newBeanThreshold}
-                  onChange={(e) => setNewBeanThreshold(Number(e.target.value))}
-                  className="w-full bg-stone-950 border border-stone-800 px-3 py-2 rounded-xl text-xs text-stone-200"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-stone-400 block mb-1">Price (IDR)</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={newBeanPrice}
-                  onChange={(e) => setNewBeanPrice(Number(e.target.value))}
-                  className="w-full bg-stone-950 border border-stone-800 px-3 py-2 rounded-xl text-xs text-stone-200"
-                />
-              </div>
-            </div>
-
-            {/* File Upload Section */}
-            <div className="bg-stone-950 p-4 rounded-2xl border border-stone-800 space-y-2">
-              <label className="text-xs text-stone-300 font-bold flex items-center gap-1.5">
-                <Upload className="w-3.5 h-3.5 text-amber-400" />
-                Upload Packaging Photo (Multer Server Storage)
-              </label>
-              <input
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                onChange={handleFileUpload}
-                className="w-full text-xs text-stone-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-amber-600 file:text-stone-950 hover:file:bg-amber-500 cursor-pointer"
-              />
-              {isUploading && <p className="text-xs text-amber-400 animate-pulse">Uploading file to server storage...</p>}
-              {uploadedImageUrl && (
-                <div className="flex items-center gap-2 text-xs text-emerald-400 font-semibold">
-                  <CheckCircle2 className="w-4 h-4" /> File attached: {uploadedImageUrl}
-                </div>
-              )}
-            </div>
-
-            <div>
-              <label className="text-xs text-stone-400 block mb-1">Tasting Notes (comma-separated)</label>
-              <input
-                type="text"
-                placeholder="e.g. White Jasmine, Bergamot, White Peach"
-                value={newBeanNotes}
-                onChange={(e) => setNewBeanNotes(e.target.value)}
-                className="w-full bg-stone-950 border border-stone-800 px-3 py-2 rounded-xl text-xs text-stone-200"
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full py-3 bg-amber-600 hover:bg-amber-500 text-stone-950 font-black text-xs rounded-xl shadow-md transition-all mt-4"
-            >
-              Save Bean to Roastery Inventory
-            </button>
           </form>
         </div>
       )}
 
       {/* MODAL 4: AUTH MODAL */}
       {showAuthModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-stone-900 border border-stone-800 rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowAuthModal(false);
+          }}
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+        >
+          <div className="bg-stone-900 border border-stone-800 rounded-t-3xl sm:rounded-3xl max-w-sm w-full max-h-[92dvh] overflow-y-auto p-5 sm:p-6 space-y-4 shadow-2xl animate-tab-enter">
+            <div className="w-10 h-1 rounded-full bg-stone-700 mx-auto sm:hidden" />
             <div className="flex items-center justify-between border-b border-stone-800 pb-3">
               <div className="flex gap-3">
                 <button
@@ -2332,8 +2544,13 @@ export default function Home() {
                   Register
                 </button>
               </div>
-              <button onClick={() => setShowAuthModal(false)} className="text-stone-500 hover:text-stone-300">
-                ✕
+              <button
+                type="button"
+                onClick={() => setShowAuthModal(false)}
+                aria-label="Close authentication modal"
+                className="w-8 h-8 rounded-xl bg-stone-800/90 hover:bg-stone-700 text-stone-300 hover:text-white flex items-center justify-center transition-colors border border-stone-700/70"
+              >
+                <X className="w-4 h-4" />
               </button>
             </div>
 

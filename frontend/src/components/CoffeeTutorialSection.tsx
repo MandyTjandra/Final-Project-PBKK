@@ -200,30 +200,30 @@ export default function CoffeeTutorialSection({
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 shrink-0">
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3 shrink-0">
             <a
               href="#gear-gallery"
-              className="px-4 py-3 rounded-2xl bg-stone-950/90 border border-stone-800 hover:border-amber-500/50 transition-all text-xs font-bold text-stone-200 flex items-center gap-2"
+              className="px-3 sm:px-4 py-2.5 sm:py-3 rounded-2xl bg-stone-950/90 border border-stone-800 hover:border-amber-500/50 transition-all text-[11px] sm:text-xs font-bold text-stone-200 flex items-center gap-2"
             >
-              <Wrench className="w-4 h-4 text-amber-400" /> 5 Set Alat Seduh
+              <Wrench className="w-4 h-4 text-amber-400 shrink-0" /> 5 Set Alat Seduh
             </a>
             <a
               href="#coffee-basics"
-              className="px-4 py-3 rounded-2xl bg-stone-950/90 border border-stone-800 hover:border-amber-500/50 transition-all text-xs font-bold text-stone-200 flex items-center gap-2"
+              className="px-3 sm:px-4 py-2.5 sm:py-3 rounded-2xl bg-stone-950/90 border border-stone-800 hover:border-amber-500/50 transition-all text-[11px] sm:text-xs font-bold text-stone-200 flex items-center gap-2"
             >
-              <Coffee className="w-4 h-4 text-amber-400" /> Spesies & Roast
+              <Coffee className="w-4 h-4 text-amber-400 shrink-0" /> Spesies & Roast
             </a>
             <a
               href="#tasting-wheel"
-              className="px-4 py-3 rounded-2xl bg-stone-950/90 border border-stone-800 hover:border-amber-500/50 transition-all text-xs font-bold text-stone-200 flex items-center gap-2"
+              className="px-3 sm:px-4 py-2.5 sm:py-3 rounded-2xl bg-stone-950/90 border border-stone-800 hover:border-amber-500/50 transition-all text-[11px] sm:text-xs font-bold text-stone-200 flex items-center gap-2"
             >
-              <Compass className="w-4 h-4 text-amber-400" /> Tasting Wheel
+              <Compass className="w-4 h-4 text-amber-400 shrink-0" /> Tasting Wheel
             </a>
             <a
               href="#extraction-guide"
-              className="px-4 py-3 rounded-2xl bg-stone-950/90 border border-stone-800 hover:border-amber-500/50 transition-all text-xs font-bold text-stone-200 flex items-center gap-2"
+              className="px-3 sm:px-4 py-2.5 sm:py-3 rounded-2xl bg-stone-950/90 border border-stone-800 hover:border-amber-500/50 transition-all text-[11px] sm:text-xs font-bold text-stone-200 flex items-center gap-2"
             >
-              <Scale className="w-4 h-4 text-amber-400" /> Grind & Diagnosa
+              <Scale className="w-4 h-4 text-amber-400 shrink-0" /> Grind & Diagnosa
             </a>
           </div>
         </div>
